@@ -4,85 +4,65 @@
   <meta charset="utf-8">
   <title>Urban Management</title>
 
-  <!-- ArcGIS CSS -->
   <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
-
-  <!-- ArcGIS JS -->
   <script src="https://js.arcgis.com/4.29/"></script>
 
-  <!-- Font -->
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
-
   <style>
-    * {
-      box-sizing: border-box;
-      font-family: Inter, sans-serif;
-    }
-
-    body {
+    html, body {
       margin: 0;
-      background-color: #f4f6f8;
-      color: #1f2937;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: Arial, sans-serif;
     }
 
     header {
-      height: 64px;
-      background-color: #ffffff;
-      border-bottom: 1px solid #e5e7eb;
+      height: 60px;
+      background: #0b1220;
+      color: white;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 32px;
+      padding: 0 30px;
     }
 
-    .title {
-      font-size: 20px;
-      font-weight: 600;
-    }
-
-    nav {
-      display: flex;
-      gap: 24px;
-    }
-
-    nav button {
+    header nav button {
       background: none;
       border: none;
-      font-size: 14px;
+      color: #cbd5e1;
+      margin-left: 20px;
       cursor: pointer;
-      padding: 8px 0;
-      color: #6b7280;
-      border-bottom: 2px solid transparent;
+      font-size: 14px;
     }
 
-    nav button.active {
-      color: #111827;
-      border-bottom: 2px solid #2563eb;
-      font-weight: 600;
+    header nav button.active {
+      color: #38bdf8;
+      font-weight: bold;
     }
 
-    #content {
-      height: calc(100vh - 64px);
-      width: 100%;
+    #app {
+      height: calc(100% - 60px);
+      position: relative;
     }
 
     #viewDiv {
       height: 100%;
       width: 100%;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 16px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       display: none;
     }
 
-    .panel {
-      height: 100%;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #6b7280;
-    }
-
-    .visible {
-      display: flex;
+    .overlay.visible {
+      display: block;
     }
   </style>
 </head>
@@ -90,53 +70,28 @@
 <body>
 
 <header>
-  <div class="title">Urban Management</div>
+  <div>Urban Management</div>
   <nav>
-    <button class="tab active" data-tab="map">3D Map</button>
-    <button class="tab" data-tab="traffic">Traffic</button>
-    <button class="tab" data-tab="environment">Environment</button>
+    <button class="tab active" data-panel="none">Map</button>
+    <button class="tab" data-panel="traffic">Traffic</button>
+    <button class="tab" data-panel="environment">Environment</button>
   </nav>
 </header>
 
-<div id="content">
-  <div id="viewDiv" class="visible"></div>
+<div id="app">
+  <div id="viewDiv"></div>
 
-  <div id="traffic" class="panel">
-    Traffic analysis view
+  <div id="traffic" class="overlay">
+    Traffic analysis content
   </div>
 
-  <div id="environment" class="panel">
-    Environmental analysis view
+  <div id="environment" class="overlay">
+    Environmental analysis content
   </div>
 </div>
 
 <script>
-  // Tab logic
-  const tabs = document.querySelectorAll(".tab");
-
-  const sections = {
-    map: document.getElementById("viewDiv"),
-    traffic: document.getElementById("traffic"),
-    environment: document.getElementById("environment")
-  };
-
-  tabs.forEach(function(tab) {
-    tab.addEventListener("click", function() {
-      tabs.forEach(function(t) {
-        t.classList.remove("active");
-      });
-
-      tab.classList.add("active");
-
-      Object.values(sections).forEach(function(section) {
-        section.classList.remove("visible");
-      });
-
-      sections[tab.dataset.tab].classList.add("visible");
-    });
-  });
-
-  // ArcGIS 3D Map
+  // ArcGIS Map
   require([
     "esri/Map",
     "esri/views/SceneView"
@@ -154,12 +109,29 @@
         position: {
           latitude: 59.3293,
           longitude: 18.0686,
-          z: 2500
+          z: 3000
         },
         tilt: 65
       }
     });
+  });
 
+  // Tabs
+  const tabs = document.querySelectorAll(".tab");
+  const panels = document.querySelectorAll(".overlay");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      panels.forEach(p => p.classList.remove("visible"));
+
+      const panelId = tab.dataset.panel;
+      if (panelId !== "none") {
+        document.getElementById(panelId).classList.add("visible");
+      }
+    });
   });
 </script>
 
