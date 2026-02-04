@@ -2,20 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Urban Management | Öxnehaga Analysis</title>
+  <title>Urban Management | Öxnehaga Digital Twin</title>
+
   <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/dark/main.css">
   <script src="https://js.arcgis.com/4.29/"></script>
 
   <style>
-    :root { --bg-dark: #0f172a; --accent: #38bdf8; }
-    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--bg-dark); color: white; overflow: hidden; }
-    header { height: 60px; background: var(--bg-dark); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 1px solid #334155; }
-    .logo { font-weight: 800; color: var(--accent); text-transform: uppercase; }
+    :root {
+      --bg-dark: #0f172a;
+      --accent: #38bdf8;
+      --panel-bg: rgba(30, 41, 59, 0.85);
+    }
+
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: white; overflow: hidden; }
+
+    header {
+      height: 60px;
+      background: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      border-bottom: 1px solid #334155;
+      z-index: 100;
+    }
+
+    .logo { font-weight: 800; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
+
     #app { height: calc(100% - 60px); position: relative; }
     #viewDiv { height: 100%; width: 100%; }
-    .overlay { position: absolute; top: 20px; right: 20px; width: 250px; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 12px; border: 1px solid #475569; }
-    .legend-item { display: flex; align-items: center; margin-top: 5px; font-size: 12px; }
-    .color-box { width: 15px; height: 15px; margin-right: 10px; border-radius: 3px; }
+
+    /* UI Controls */
+    .overlay {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 220px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(8px);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid #475569;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .legend-item { display: flex; align-items: center; margin-top: 10px; font-size: 13px; }
+    .color-box { width: 18px; height: 18px; margin-right: 12px; border-radius: 4px; }
+
+    #toggleBtn {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: var(--bg-dark);
+      border: none;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+      z-index: 100;
+      transition: 0.2s;
+    }
+
+    #toggleBtn:hover { transform: translateX(-50%) scale(1.05); background: white; }
   </style>
 </head>
 
@@ -27,11 +78,14 @@
 
 <div id="app">
   <div id="viewDiv"></div>
+  
+  <button id="toggleBtn">Switch to 2D View</button>
+
   <div class="overlay">
-    <h4 style="margin:0 0 10px 0">Gångavstånd (min)</h4>
-    <div class="legend-item"><div class="color-box" style="background: #4ade80;"></div> 0 - 5 min</div>
-    <div class="legend-item"><div class="color-box" style="background: #facc15;"></div> 5 - 10 min</div>
-    <div class="legend-item"><div class="color-box" style="background: #f87171;"></div> 10 - 15 min</div>
+    <h4 style="margin: 0 0 10px 0; color: var(--accent);">Gångavstånd</h4>
+    <div class="legend-item"><div class="color-box" style="background: rgba(74, 222, 128, 0.6);"></div> 0 - 5 min</div>
+    <div class="legend-item"><div class="color-box" style="background: rgba(250, 204, 21, 0.6);"></div> 5 - 10 min</div>
+    <div class="legend-item"><div class="color-box" style="background: rgba(248, 113, 113, 0.6);"></div> 10 - 15 min</div>
   </div>
 </div>
 
@@ -42,24 +96,23 @@
     "esri/layers/GeoJSONLayer"
   ], function(Map, SceneView, GeoJSONLayer) {
 
-    // 1. Definiera hur zonerna ska se ut baserat på namnet i din fil
     const renderer = {
       type: "unique-value",
-      field: "Name", // Tar värdet från din geojson (t.ex. "0 - 5")
+      field: "Name", 
       uniqueValueInfos: [
-        { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.5], outline: { color: "white", width: 1 } } },
-        { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.5], outline: { color: "white", width: 1 } } },
-        { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.5], outline: { color: "white", width: 1 } } }
+        { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.6], outline: { color: "white", width: 1 } } },
+        { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.6], outline: { color: "white", width: 1 } } },
+        { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.6], outline: { color: "white", width: 1 } } }
       ]
     };
 
-    // 2. Skapa lagret från din exporterade fil
+    // Din råa GitHub-länk för stabil laddning
     const geojsonLayer = new GeoJSONLayer({
-      url: "./Polygons_FeaturesToJSON.geojson",
+      url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson",
       renderer: renderer,
       popupTemplate: {
-        title: "Resezon: {Name} minuter",
-        content: "Detta område ligger inom {Name} minuters gångavstånd."
+        title: "Resezon: {Name} min",
+        content: "Gångavstånd till Öxnehaga centrum."
       }
     });
 
@@ -72,15 +125,31 @@
       container: "viewDiv",
       map: map,
       camera: {
-        position: {
-          longitude: 14.261, // Centrerat på Öxnehaga
-          latitude: 57.781,
-          z: 2000
-        },
+        position: { longitude: 14.261, latitude: 57.781, z: 4000 },
         tilt: 45
       }
     });
+
+    // Toggle logik
+    let is3D = true;
+    const btn = document.getElementById("toggleBtn");
+
+    btn.addEventListener("click", () => {
+      if (is3D) {
+        view.goTo({ tilt: 0, heading: 0 });
+        btn.innerText = "Switch to 3D View";
+      } else {
+        view.goTo({ tilt: 45, heading: 0 });
+        btn.innerText = "Switch to 2D View";
+      }
+      is3D = !is3D;
+    });
+
+    geojsonLayer.when(() => {
+      view.goTo(geojsonLayer.fullExtent);
+    });
   });
 </script>
+
 </body>
 </html>
