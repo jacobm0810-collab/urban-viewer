@@ -100,10 +100,6 @@
         <span>Lekplatser</span>
         <label class="switch"><input type="checkbox" id="layerPlaygrounds" checked><span class="slider"></span></label>
       </div>
-      <div class="control-item">
-        <span>3D Byggnader</span>
-        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
-      </div>
     </section>
 
     <section>
@@ -129,7 +125,7 @@
     "esri/core/reactiveUtils"
   ], function(Map, SceneView, GeoJSONLayer, reactiveUtils) {
 
-    // 1. Gånganalys
+    // Gånganalys
     const geojsonLayer = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson",
       renderer: {
@@ -143,7 +139,7 @@
       }
     });
 
-    // 2. Lekplatser - Uppdaterad URL med det nya filnamnet
+    // Lekplatser - Uppdaterad URL med rätt filnamn från din GitHub
     const playgroundLayer = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSONlekparkNYAA.geojson.geojson",
       renderer: {
@@ -151,8 +147,8 @@
         symbol: {
           type: "picture-marker",
           url: "https://static.arcgis.com/images/Symbols/OutdoorRecreation/Playground.png",
-          width: "24px",
-          height: "24px"
+          width: "22px",
+          height: "22px"
         }
       }
     });
@@ -166,38 +162,21 @@
     const view = new SceneView({
       container: "viewDiv",
       map: map,
-      camera: { position: { longitude: 14.261, latitude: 57.781, z: 1500 }, tilt: 50 }
+      camera: { position: { longitude: 14.261, latitude: 57.772, z: 1200 }, tilt: 50 }
     });
 
-    // Väder
-    async function fetchWeather(lat, lon) {
-      try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-        const data = await res.json();
-        const temp = Math.round(data.current_weather.temperature);
-        document.getElementById("weather-info").innerText = `${temp}°C | Clear Sky`;
-      } catch (e) { console.error(e); }
-    }
-
-    view.when(() => {
-      fetchWeather(57.78, 14.26);
-      reactiveUtils.when(() => view.stationary === true, () => {
-        if (view.center) fetchWeather(view.center.latitude.toFixed(2), view.center.longitude.toFixed(2));
-      });
-    });
-
-    // Kontroller
-    let is3D = true;
-    document.getElementById("toggleMode").addEventListener("click", function() {
-      if (is3D) { view.goTo({ tilt: 0, heading: 0 }); this.innerText = "Växla till 3D-vy"; } 
-      else { view.goTo({ tilt: 50, heading: 0 }); this.innerText = "Växla till 2D-vy"; }
-      is3D = !is3D;
-    });
-
+    // Lagerkontroller
     document.getElementById("layerZones").addEventListener("change", (e) => { geojsonLayer.visible = e.target.checked; });
     document.getElementById("layerPlaygrounds").addEventListener("change", (e) => { playgroundLayer.visible = e.target.checked; });
+
+    // 2D/3D knapp
+    let is3D = true;
+    document.getElementById("toggleMode").addEventListener("click", function() {
+      if (is3D) { view.goTo({ tilt: 0 }); this.innerText = "Växla till 3D-vy"; } 
+      else { view.goTo({ tilt: 50 }); this.innerText = "Växla till 2D-vy"; }
+      is3D = !is3D;
+    });
   });
 </script>
-
 </body>
 </html>
