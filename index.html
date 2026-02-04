@@ -47,7 +47,6 @@
     }
 
     h3 { font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-
     .control-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; font-weight: 500; margin-top: 10px; }
 
     .switch { position: relative; width: 34px; height: 20px; }
@@ -58,12 +57,10 @@
     input:checked + .slider:before { transform: translateX(14px); }
 
     .btn-main { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    
     .legend { background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; }
     .legend-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; margin-bottom: 5px; }
     .box { width: 14px; height: 14px; border-radius: 3px; }
     
-    /* Ikon för lekplats i teckenförklaringen */
     .playground-icon-legend {
       width: 18px;
       height: 18px;
@@ -132,7 +129,7 @@
     "esri/core/reactiveUtils"
   ], function(Map, SceneView, GeoJSONLayer, reactiveUtils) {
 
-    // 1. Lager för Gånganalys
+    // 1. Gånganalys
     const geojsonLayer = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson",
       renderer: {
@@ -146,13 +143,9 @@
       }
     });
 
-    // 2. Lager för Lekplatser med Bildsymbol (Ikon)
+    // 2. Lekplatser - Uppdaterad URL med det nya filnamnet
     const playgroundLayer = new GeoJSONLayer({
-      url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSONlekpark.geojson",
-      popupTemplate: {
-        title: "Lekplats",
-        content: "Här finns en lekplats i Öxnehaga."
-      },
+      url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSONlekparkNYAA.geojson.geojson",
       renderer: {
         type: "simple",
         symbol: {
@@ -203,8 +196,6 @@
 
     document.getElementById("layerZones").addEventListener("change", (e) => { geojsonLayer.visible = e.target.checked; });
     document.getElementById("layerPlaygrounds").addEventListener("change", (e) => { playgroundLayer.visible = e.target.checked; });
-    
-    geojsonLayer.when(() => { view.goTo(geojsonLayer.fullExtent); });
   });
 </script>
 
