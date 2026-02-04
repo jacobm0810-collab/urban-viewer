@@ -8,31 +8,30 @@
   <script src="https://js.arcgis.com/4.29/"></script>
 
   <style>
-    :root { --header-bg: #ffffff; --sidebar-bg: #ffffff; --text: #1e293b; --accent: #0284c7; --border: #e2e8f0; }
-    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', sans-serif; background: #f1f5f9; color: var(--text); overflow: hidden; }
+    :root { --header-bg: #ffffff; --sidebar-bg: #ffffff; --accent: #0284c7; --border: #e2e8f0; }
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: #f1f5f9; overflow: hidden; }
     
     header { height: 60px; background: var(--header-bg); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 2px solid var(--border); z-index: 100; }
-    .logo { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
-    .location-box { text-align: right; min-width: 180px; }
-    #city-name { font-size: 0.9rem; font-weight: 700; }
-    #weather-info { font-size: 0.8rem; color: var(--accent); font-weight: 700; }
-
+    .logo { font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    
     #main-wrapper { display: flex; height: calc(100% - 60px); width: 100%; }
-    #viewDiv { flex: 1; height: 100%; background: #e5e7eb; }
+    #viewDiv { flex: 1; height: 100%; background: #dee2e6; } /* Grå placeholder */
 
-    #sidebar { width: 320px; background: var(--sidebar-bg); border-left: 2px solid var(--border); padding: 25px; display: flex; flex-direction: column; gap: 20px; box-shadow: -2px 0 10px rgba(0,0,0,0.05); overflow-y: auto; }
+    #sidebar { width: 320px; background: var(--sidebar-bg); border-left: 2px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; box-shadow: -2px 0 10px rgba(0,0,0,0.05); }
     h3 { font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
     
-    .search-box { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; font-family: inherit; }
-    .btn-main { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 5px; }
-    .control-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; margin-bottom: 10px; }
+    .btn-main { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    .control-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; }
     
+    /* Switch */
     .switch { position: relative; width: 34px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 20px; }
     .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
     input:checked + .slider { background-color: var(--accent); }
     input:checked + .slider:before { transform: translateX(14px); }
+
+    #debug-log { position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.7); color: #00ff00; padding: 5px 10px; font-family: monospace; font-size: 10px; z-index: 200; pointer-events: none; }
   </style>
 </head>
 
@@ -40,119 +39,109 @@
 
 <header>
   <div class="logo">Urban Management</div>
-  <div class="location-box">
-    <div id="city-name">Jönköping, SE</div>
-    <div id="weather-info">Laddar...</div>
+  <div id="status-display" style="text-align: right; font-size: 0.8rem;">
+    <b id="city-label">Jönköping, SE</b><br>
+    <span id="weather-label" style="color: var(--accent)">Laddar karta...</span>
   </div>
 </header>
 
 <div id="main-wrapper">
   <div id="viewDiv"></div>
-
   <div id="sidebar">
     <section>
       <h3>Sök Plats</h3>
-      <div id="searchWidgetDiv"></div> </section>
-
+      <div id="searchDiv"></div>
+    </section>
     <section>
       <h3>Kameravy</h3>
-      <button id="toggleMode" class="btn-main">Växla till 2D-vy</button>
+      <button id="viewBtn" class="btn-main">Växla till 2D</button>
     </section>
-
     <section>
-      <h3>Kartlager</h3>
+      <h3>Lager</h3>
       <div class="control-item">
-        <span>Gånganalys (Öxnehaga)</span>
-        <label class="switch"><input type="checkbox" id="layerZones" checked><span class="slider"></span></label>
+        <span>Gångzoner</span>
+        <label class="switch"><input type="checkbox" id="zonesToggle" checked><span class="slider"></span></label>
       </div>
       <div class="control-item">
         <span>3D Byggnader</span>
-        <label class="switch"><input type="checkbox" id="layerBuildings" checked><span class="slider"></span></label>
+        <label class="switch"><input type="checkbox" id="buildToggle" checked><span class="slider"></span></label>
       </div>
     </section>
   </div>
 </div>
 
+<div id="debug-log">System: Startar...</div>
+
 <script>
+  const log = (msg) => document.getElementById("debug-log").innerText = "System: " + msg;
+
   require([
     "esri/Map",
     "esri/views/SceneView",
     "esri/layers/GeoJSONLayer",
     "esri/layers/OSMBuildingsLayer",
     "esri/widgets/Search",
-    "esri/rest/locator",
     "esri/core/reactiveUtils"
-  ], function(Map, SceneView, GeoJSONLayer, OSMBuildingsLayer, Search, locator, reactiveUtils) {
+  ], function(Map, SceneView, GeoJSONLayer, OSMBuildingsLayer, Search, reactiveUtils) {
+    
+    log("Laddar moduler...");
 
-    const zoneLayer = new GeoJSONLayer({
+    const zones = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson",
       renderer: {
         type: "unique-value",
         field: "Name",
         uniqueValueInfos: [
-          { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.6], outline: { color: "white", width: 1 } } },
-          { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.6], outline: { color: "white", width: 1 } } },
-          { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.6], outline: { color: "white", width: 1 } } }
+          { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.5] } },
+          { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.5] } },
+          { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.5] } }
         ]
       }
     });
 
-    const buildingsLayer = new OSMBuildingsLayer();
-
-    const map = new Map({
-      basemap: "hybrid",
-      ground: "world-elevation",
-      layers: [zoneLayer, buildingsLayer]
-    });
+    const buildings = new OSMBuildingsLayer();
+    const map = new Map({ basemap: "hybrid", ground: "world-elevation", layers: [zones, buildings] });
 
     const view = new SceneView({
       container: "viewDiv",
       map: map,
-      camera: { position: { longitude: 14.261, latitude: 57.781, z: 1200 }, tilt: 50 }
+      camera: { position: { longitude: 14.261, latitude: 57.781, z: 1500 }, tilt: 50 }
     });
 
-    // Sök-widget i sidomenyn
-    const searchWidget = new Search({
-      view: view,
-      container: "searchWidgetDiv"
-    });
+    const search = new Search({ view: view, container: "searchDiv" });
 
-    // Väder & Lokalisering
-    const locatorUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
-
-    async function updateInfo() {
+    // Väder-funktion
+    async function updateWeather() {
       if (!view.center) return;
-      
-      // Väder
       try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${view.center.latitude}&longitude=${view.center.longitude}&current_weather=true`);
         const data = await res.json();
-        document.getElementById("weather-info").innerText = Math.round(data.current_weather.temperature) + "°C | Real-time";
-      } catch(e) {}
-
-      // Stad
-      try {
-        const res = await locator.locationToAddress(locatorUrl, { location: view.center });
-        if (res && res.address) {
-          document.getElementById("city-name").innerText = (res.address.City || "Okänd plats") + ", " + (res.address.CountryCode || "");
-        }
-      } catch(e) {}
+        document.getElementById("weather-label").innerText = Math.round(data.current_weather.temperature) + "°C | Real-time";
+        log("Väder uppdaterat.");
+      } catch(e) { log("Väder-fel."); }
     }
 
-    reactiveUtils.when(() => view.stationary === true, updateInfo);
-
-    // Knappar
-    let is3D = true;
-    document.getElementById("toggleMode").addEventListener("click", function() {
-      if (is3D) { view.goTo({ tilt: 0 }); this.innerText = "Växla till 3D-vy"; }
-      else { view.goTo({ tilt: 50 }); this.innerText = "Växla till 2D-vy"; }
-      is3D = !is3D;
+    view.when(() => {
+      log("Karta redo.");
+      updateWeather();
+      
+      reactiveUtils.when(() => view.stationary, () => {
+        updateWeather();
+      });
     });
 
-    document.getElementById("layerZones").addEventListener("change", (e) => zoneLayer.visible = e.target.checked);
-    document.getElementById("layerBuildings").addEventListener("change", (e) => buildingsLayer.visible = e.target.checked);
+    // Kontroller
+    let is3D = true;
+    document.getElementById("viewBtn").onclick = function() {
+      is3D = !is3D;
+      view.goTo({ tilt: is3D ? 50 : 0 });
+      this.innerText = is3D ? "Växla till 2D" : "Växla till 3D";
+    };
 
-    view.when(() => updateInfo());
+    document.getElementById("zonesToggle").onchange = (e) => zones.visible = e.target.checked;
+    document.getElementById("buildToggle").onchange = (e) => buildings.visible = e.target.checked;
+    
+    zones.load().then(() => log("Data laddad.")).catch(() => log("Kunde inte ladda GeoJSON."));
   });
 </script>
 </body>
