@@ -1,56 +1,127 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Urban Management | Digital Twin</title>
-    
-    <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css" rel="stylesheet" />
-    
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+  <meta charset="utf-8" />
+  <title>Urban Management</title>
 
-    <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --accent: #38bdf8; }
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        header { 
-            height: 60px; background: #0f172a; display: flex; align-items: center; 
-            justify-content: space-between; padding: 0 25px; border-bottom: 1px solid #334155;
-        }
-        .logo { font-weight: 800; font-size: 1.2rem; color: var(--accent); letter-spacing: 1px; }
-        nav ul { display: flex; list-style: none; gap: 20px; font-size: 0.85rem; opacity: 0.8; }
+  <!-- ArcGIS -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+  <script src="https://js.arcgis.com/4.29/"></script>
 
-        #app-container { flex: 1; display: flex; padding: 15px; gap: 15px; height: calc(100vh - 60px); box-sizing: border-box; }
-        
-        .view-panel { 
-            flex: 1; position: relative; border-radius: 12px; 
-            background: var(--panel); border: 1px solid #334155; overflow: hidden;
-        }
-        
-        #map-2d, #view-3d { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-        
-        .label {
-            position: absolute; top: 12px; left: 12px; z-index: 10;
-            background: rgba(15, 23, 42, 0.9); padding: 5px 12px; border-radius: 6px;
-            font-size: 0.7rem; text-transform: uppercase; border: 1px solid #475569;
-        }
-    </style>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Inter", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f4f6f8;
+      color: #1f2937;
+    }
+
+    header {
+      height: 64px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    nav {
+      display: flex;
+      gap: 24px;
+    }
+
+    nav button {
+      background: none;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 0;
+      color: #6b7280;
+      border-bottom: 2px solid transparent;
+    }
+
+    nav button.active {
+      color: #111827;
+      border-bottom: 2px solid #2563eb;
+      font-weight: 600;
+    }
+
+    #content {
+      height: calc(100vh - 64px);
+      width: 100%;
+    }
+
+    #viewDiv {
+      height: 100%;
+      width: 100%;
+      display: none;
+    }
+
+    .placeholder {
+      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #6b7280;
+    }
+
+    .visible {
+      display: flex;
+    }
+  </style>
 </head>
+
 <body>
 
 <header>
-    <div class="logo">URBAN MANAGEMENT</div>
-    <nav><ul><li>DASHBOARD</li><li>MAPS</li><li>MODELS</li><li>ANALYTICS</li></ul></nav>
+  <div class="title">Urban Management</div>
+  <nav>
+    <button class="tab active" data-tab="map">3D Karta</button>
+    <button class="tab" data-tab="traffic">Trafik</button>
+    <button class="tab" data-tab="environment">Miljö</button>
+  </nav>
 </header>
 
-<div id="app-container">
-    <div class="view-panel">
-        <div class="label">2D Global Viewer
+<div id="content">
+  <div id="viewDiv" class="visible"></div>
+
+  <div id="traffic" class="placeholder">
+    🚦 Trafikdata kommer här
+  </div>
+
+  <div id="environment" class="placeholder">
+    🌱 Miljöanalys kommer här
+  </div>
+</div>
+
+<script>
+  // Tabs
+  const tabs = document.querySelectorAll(".tab");
+  const sections = {
+    map: document.getElementById("viewDiv"),
+    traffic: document.getElementById("traffic"),
+    environment: document.getElementById("environment")
+  };
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      Object.values(sections).forEach(sec => sec.classList
