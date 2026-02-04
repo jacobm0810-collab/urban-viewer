@@ -1,180 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
   <meta charset="utf-8">
   <title>Urban Management | Digital Twin</title>
-
   <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
   <script src="https://js.arcgis.com/4.29/"></script>
-
   <style>
-    :root {
-      --header-bg: #ffffff;
-      --sidebar-bg: #ffffff;
-      --text: #1e293b;
-      --accent: #0284c7;
-      --border: #e2e8f0;
-    }
-
-    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', sans-serif; background: #f1f5f9; color: var(--text); overflow: hidden; }
-
-    /* Header - Vit med svart text */
-    header {
-      height: 60px;
-      background: var(--header-bg);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 30px;
-      border-bottom: 2px solid var(--border);
-      z-index: 100;
-    }
-
-    .logo { font-weight: 800; font-size: 1.1rem; color: #000; text-transform: uppercase; letter-spacing: 1px; }
-    .location-box { text-align: right; }
-    #weather-info { font-size: 0.8rem; color: var(--accent); font-weight: 700; }
-
+    :root { --header-bg: #ffffff; --sidebar-bg: #ffffff; --text: #1e293b; --accent: #0284c7; --border: #e2e8f0; }
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: #f1f5f9; color: var(--text); overflow: hidden; }
+    header { height: 60px; background: var(--header-bg); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 2px solid var(--border); z-index: 100; }
+    .logo { font-weight: 800; font-size: 1.1rem; color: #000; text-transform: uppercase; }
     #main-wrapper { display: flex; height: calc(100% - 60px); width: 100%; }
     #viewDiv { flex: 1; height: 100%; background: #e5e7eb; }
-
-    /* Sidopanel - Vit med svart text */
-    #sidebar {
-      width: 300px;
-      background: var(--sidebar-bg);
-      border-left: 2px solid var(--border);
-      padding: 25px;
-      display: flex;
-      flex-direction: column;
-      gap: 25px;
-      box-shadow: -2px 0 10px rgba(0,0,0,0.05);
-    }
-
+    #sidebar { width: 300px; background: var(--sidebar-bg); border-left: 2px solid var(--border); padding: 25px; display: flex; flex-direction: column; gap: 25px; box-shadow: -2px 0 10px rgba(0,0,0,0.05); }
     h3 { font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin: 0; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-
-    .control-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; font-weight: 500; }
-
-    /* Switch */
+    .control-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.9rem; }
     .switch { position: relative; width: 34px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 20px; }
     .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
     input:checked + .slider { background-color: var(--accent); }
     input:checked + .slider:before { transform: translateX(14px); }
-
     .btn-main { width: 100%; padding: 12px; background: #0f172a; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    
     .legend { background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; }
     .legend-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; margin-bottom: 5px; }
     .box { width: 14px; height: 14px; border-radius: 3px; }
   </style>
 </head>
-
 <body>
-
 <header>
   <div class="logo">Urban Management</div>
-  <div class="location-box">
-    <div style="font-size: 0.9rem; font-weight: 700;">Jönköping, Sweden</div>
-    <div id="weather-info">Laddar väder...</div>
+  <div style="text-align: right;">
+    <div id="city-label" style="font-size: 0.9rem; font-weight: 700;">Jonkoping, Sweden</div>
+    <div id="weather-info" style="font-size: 0.8rem; color: var(--accent); font-weight: 700;">Laddar vader...</div>
   </div>
 </header>
-
 <div id="main-wrapper">
   <div id="viewDiv"></div>
-
   <div id="sidebar">
     <section>
       <h3>Kameravy</h3>
-      <button id="toggleMode" class="btn-main">Växla till 2D-vy</button>
+      <button id="toggleMode" class="btn-main">Vaxla till 3D/2D</button>
     </section>
-
     <section>
       <h3>Kartlager</h3>
       <div class="control-item">
-        <span>Gånganalys</span>
+        <span>Ganganalys</span>
         <label class="switch"><input type="checkbox" id="layerZones" checked><span class="slider"></span></label>
       </div>
       <div class="control-item">
         <span>3D Byggnader</span>
-        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
-      </div>
-      <div class="control-item">
-        <span>Parkeringar</span>
-        <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+        <label class="switch"><input type="checkbox" id="layerBuildings" checked><span class="slider"></span></label>
       </div>
     </section>
-
     <section>
-      <h3>Teckenförklaring</h3>
+      <h3>Legend</h3>
       <div class="legend">
-        <div class="legend-row"><div class="box" style="background: rgba(74, 222, 128, 0.7);"></div> 0 - 5 minuter</div>
-        <div class="legend-row"><div class="box" style="background: rgba(250, 204, 21, 0.7);"></div> 5 - 10 minuter</div>
-        <div class="legend-row"><div class="box" style="background: rgba(248, 113, 113, 0.7);"></div> 10 - 15 minuter</div>
+        <div class="legend-row"><div class="box" style="background: rgba(74, 222, 128, 0.7);"></div> 0 - 5 min</div>
+        <div class="legend-row"><div class="box" style="background: rgba(250, 204, 21, 0.7);"></div> 5 - 10 min</div>
+        <div class="legend-row"><div class="box" style="background: rgba(248, 113, 113, 0.7);"></div> 10 - 15 min</div>
       </div>
     </section>
   </div>
 </div>
-
 <script>
-  require([
-    "esri/Map",
-    "esri/views/SceneView",
-    "esri/layers/GeoJSONLayer",
-    "esri/core/reactiveUtils"
-  ], function(Map, SceneView, GeoJSONLayer, reactiveUtils) {
-
-    const geojsonLayer = new GeoJSONLayer({
+  require(["esri/Map","esri/views/SceneView","esri/layers/GeoJSONLayer","esri/layers/OSMBuildingsLayer","esri/rest/locator","esri/core/reactiveUtils"], 
+  function(Map, SceneView, GeoJSONLayer, OSMBuildingsLayer, locator, reactiveUtils) {
+    const zones = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson",
-      renderer: {
-        type: "unique-value",
-        field: "Name",
+      renderer: { type: "unique-value", field: "Name",
         uniqueValueInfos: [
-          { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.6], outline: { color: "white", width: 1 } } },
-          { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.6], outline: { color: "white", width: 1 } } },
-          { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.6], outline: { color: "white", width: 1 } } }
+          { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.6], outline: { color: "white" } } },
+          { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.6], outline: { color: "white" } } },
+          { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.6], outline: { color: "white" } } }
         ]
       }
     });
-
-    const map = new Map({
-      basemap: "hybrid",
-      ground: "world-elevation",
-      layers: [geojsonLayer]
-    });
-
-    const view = new SceneView({
-      container: "viewDiv",
-      map: map,
-      camera: { position: { longitude: 14.261, latitude: 57.781, z: 1500 }, tilt: 50 }
-    });
-
-    // Väder-API
-    async function fetchWeather(lat, lon) {
-      try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-        const data = await res.json();
-        const temp = Math.round(data.current_weather.temperature);
-        document.getElementById("weather-info").innerText = `${temp}°C | Clear Sky`;
-      } catch (e) { console.error(e); }
-    }
-
-    view.when(() => {
-      fetchWeather(57.78, 14.26);
-      reactiveUtils.when(() => view.stationary === true, () => {
-        if (view.center) fetchWeather(view.center.latitude.toFixed(2), view.center.longitude.toFixed(2));
-      });
-    });
-
-    let is3D = true;
-    document.getElementById("toggleMode").addEventListener("click", function() {
-      if (is3D) { view.goTo({ tilt: 0, heading: 0 }); this.innerText = "Växla till 3D-vy"; } 
-      else { view.goTo({ tilt: 50, heading: 0 }); this.innerText = "Växla till 2D-vy"; }
-      is3D = !is3D;
-    });
-
-    document.getElementById("layerZones").addEventListener("change", (e) => { geojsonLayer.visible = e.target.checked; });
+    const buildings = new OSMBuildingsLayer();
+    const map = new Map({ basemap: "hybrid", ground: "world-elevation", layers: [zones, buildings] });
+    const view = new SceneView({ container: "viewDiv", map: map, camera: { position: [14.261, 57.781, 1200], tilt: 50 } });
     
-    geojsonLayer.when(() => { view.goTo(geojsonLayer.fullExtent); });
+    async function updateInfo() {
+      if (!view.center) return;
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${view.center.latitude}&longitude=${view.center.longitude}&current_weather=true`);
+        const data = await res.json();
+        document.getElementById("weather-info").innerText = Math.round(data.current_weather.temperature) + "°C | Real-time";
+        const addr = await locator.locationToAddress("https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer", { location: view.center });
+        document.getElementById("city-label").innerText = (addr.address.City || "Okand plats") + ", " + (addr.address.CountryCode || "");
+      } catch (e) {}
+    }
+    view.when(() => { updateInfo(); reactiveUtils.when(() => view.stationary, updateInfo); });
+    let is3D = true;
+    document.getElementById("toggleMode").onclick = () => { is3D = !is3D; view.goTo({ tilt: is3D ? 50 : 0 }); };
+    document.getElementById("layerZones").onchange = (e) => zones.visible = e.target.checked;
+    document.getElementById("layerBuildings").onchange = (e) => buildings.visible = e.target.checked;
+    zones.when(() => view.goTo(zones.fullExtent));
   });
 </script>
 </body>
