@@ -1,32 +1,33 @@
 <!DOCTYPE html>
-<html lang="sv">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="utf-8">
   <title>Urban Management</title>
 
-  <!-- ArcGIS -->
-  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css" />
+  <!-- ArcGIS CSS -->
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+
+  <!-- ArcGIS JS -->
   <script src="https://js.arcgis.com/4.29/"></script>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <!-- Font -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
 
   <style>
     * {
       box-sizing: border-box;
-      font-family: "Inter", sans-serif;
+      font-family: Inter, sans-serif;
     }
 
     body {
       margin: 0;
-      background: #f4f6f8;
+      background-color: #f4f6f8;
       color: #1f2937;
     }
 
     header {
       height: 64px;
-      background: #ffffff;
+      background-color: #ffffff;
       border-bottom: 1px solid #e5e7eb;
       display: flex;
       align-items: center;
@@ -37,7 +38,6 @@
     .title {
       font-size: 20px;
       font-weight: 600;
-      letter-spacing: 0.5px;
     }
 
     nav {
@@ -72,7 +72,7 @@
       display: none;
     }
 
-    .placeholder {
+    .panel {
       height: 100%;
       display: none;
       align-items: center;
@@ -92,36 +92,76 @@
 <header>
   <div class="title">Urban Management</div>
   <nav>
-    <button class="tab active" data-tab="map">3D Karta</button>
-    <button class="tab" data-tab="traffic">Trafik</button>
-    <button class="tab" data-tab="environment">Miljö</button>
+    <button class="tab active" data-tab="map">3D Map</button>
+    <button class="tab" data-tab="traffic">Traffic</button>
+    <button class="tab" data-tab="environment">Environment</button>
   </nav>
 </header>
 
 <div id="content">
   <div id="viewDiv" class="visible"></div>
 
-  <div id="traffic" class="placeholder">
-    🚦 Trafikdata kommer här
+  <div id="traffic" class="panel">
+    Traffic analysis view
   </div>
 
-  <div id="environment" class="placeholder">
-    🌱 Miljöanalys kommer här
+  <div id="environment" class="panel">
+    Environmental analysis view
   </div>
 </div>
 
 <script>
-  // Tabs
+  // Tab logic
   const tabs = document.querySelectorAll(".tab");
+
   const sections = {
     map: document.getElementById("viewDiv"),
     traffic: document.getElementById("traffic"),
     environment: document.getElementById("environment")
   };
 
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
+  tabs.forEach(function(tab) {
+    tab.addEventListener("click", function() {
+      tabs.forEach(function(t) {
+        t.classList.remove("active");
+      });
+
       tab.classList.add("active");
 
-      Object.values(sections).forEach(sec => sec.classList
+      Object.values(sections).forEach(function(section) {
+        section.classList.remove("visible");
+      });
+
+      sections[tab.dataset.tab].classList.add("visible");
+    });
+  });
+
+  // ArcGIS 3D Map
+  require([
+    "esri/Map",
+    "esri/views/SceneView"
+  ], function(Map, SceneView) {
+
+    const map = new Map({
+      basemap: "gray-vector",
+      ground: "world-elevation"
+    });
+
+    const view = new SceneView({
+      container: "viewDiv",
+      map: map,
+      camera: {
+        position: {
+          latitude: 59.3293,
+          longitude: 18.0686,
+          z: 2500
+        },
+        tilt: 65
+      }
+    });
+
+  });
+</script>
+
+</body>
+</html>
