@@ -2,40 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Urban Management | Öxnehaga Satellite 3D</title>
+  <title>Urban Management | Digital Twin</title>
 
   <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/dark/main.css">
   <script src="https://js.arcgis.com/4.29/"></script>
 
   <style>
-    :root { --bg-dark: #0f172a; --accent: #38bdf8; --panel-bg: rgba(15, 23, 42, 0.85); }
-    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: white; overflow: hidden; }
-    header { height: 60px; background: var(--bg-dark); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 1px solid #334155; z-index: 100; }
-    .logo { font-weight: 800; color: var(--accent); text-transform: uppercase; }
-    #app { height: calc(100% - 60px); position: relative; }
-    #viewDiv { height: 100%; width: 100%; }
-    .overlay { position: absolute; top: 20px; right: 20px; width: 220px; background: var(--panel-bg); backdrop-filter: blur(8px); padding: 20px; border-radius: 12px; border: 1px solid #475569; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    .legend-item { display: flex; align-items: center; margin-top: 10px; font-size: 13px; }
-    .color-box { width: 18px; height: 18px; margin-right: 12px; border-radius: 4px; }
-    #toggleBtn { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--bg-dark); border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; cursor: pointer; z-index: 100; }
+    :root {
+      --bg-dark: #0f172a;
+      --panel-bg: #1e293b;
+      --accent: #38bdf8;
+      --border: #334155;
+    }
+
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Inter', sans-serif; background: var(--bg-dark); color: white; overflow: hidden; }
+
+    /* Header - Stilren och minimalistisk */
+    header {
+      height: 50px;
+      background: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+      justify-content: space-between;
+    }
+
+    .logo { font-weight: 700; font-size: 1rem; color: var(--accent); letter-spacing: 0.05em; text-transform: uppercase; }
+
+    #main-container { display: flex; height: calc(100% - 50px); width: 100%; }
+
+    /* Karta */
+    #viewDiv { flex: 1; height: 100%; }
+
+    /* Sidopanel till höger */
+    #sidebar {
+      width: 300px;
+      background: var(--panel-bg);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      box-shadow: -4px 0 15px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+
+    h3 { font-size: 0.9rem; color: var(--accent); margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+
+    .control-group { margin-bottom: 25px; }
+
+    /* Toggle Switch Style */
+    .layer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+    }
+
+    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #475569; transition: .4s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--accent); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Knapp för View Mode */
+    .view-btn {
+      width: 100%;
+      padding: 10px;
+      background: #334155;
+      color: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: 0.2s;
+    }
+    .view-btn:hover { background: var(--accent); color: var(--bg-dark); }
+
+    /* Legend */
+    .legend { font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; }
+    .legend-row { display: flex; align-items: center; margin-bottom: 5px; }
+    .dot { width: 12px; height: 12px; border-radius: 2px; margin-right: 10px; }
   </style>
 </head>
 
 <body>
 
 <header>
-  <div class="logo">Urban Management | Öxnehaga Satellite</div>
+  <div class="logo">Urban Management | Digital Twin</div>
+  <div style="font-size: 0.8rem; color: #94a3b8;">Jönköping - Öxnehaga</div>
 </header>
 
-<div id="app">
+<div id="main-container">
   <div id="viewDiv"></div>
-  <button id="toggleBtn">Switch to 2D View</button>
 
-  <div class="overlay">
-    <h4 style="margin: 0 0 10px 0; color: var(--accent);">Gångavstånd</h4>
-    <div class="legend-item"><div class="color-box" style="background: rgba(74, 222, 128, 0.6);"></div> 0 - 5 min</div>
-    <div class="legend-item"><div class="color-box" style="background: rgba(250, 204, 21, 0.6);"></div> 5 - 10 min</div>
-    <div class="legend-item"><div class="color-box" style="background: rgba(248, 113, 113, 0.6);"></div> 10 - 15 min</div>
+  <div id="sidebar">
+    <div class="control-group">
+      <h3>View Mode</h3>
+      <button id="viewToggle" class="view-btn">Switch to 2D</button>
+    </div>
+
+    <div class="control-group">
+      <h3>Layers</h3>
+      
+      <div class="layer-item">
+        <span>Gångzoner (Isochrones)</span>
+        <label class="switch"><input type="checkbox" id="zoneToggle" checked><span class="slider"></span></label>
+      </div>
+
+      <div class="layer-item">
+        <span>Byggnader (3D)</span>
+        <label class="switch"><input type="checkbox" id="buildingToggle"><span class="slider"></span></label>
+      </div>
+
+      <div class="layer-item">
+        <span>Parkeringar</span>
+        <label class="switch"><input type="checkbox" id="parkingToggle"><span class="slider"></span></label>
+      </div>
+
+      <div class="layer-item">
+        <span>Busshållplatser</span>
+        <label class="switch"><input type="checkbox" id="busToggle"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <h3>Legend</h3>
+      <div class="legend">
+        <div class="legend-row"><div class="dot" style="background: rgba(74, 222, 128, 0.6);"></div> 0 - 5 min</div>
+        <div class="legend-row"><div class="dot" style="background: rgba(250, 204, 21, 0.6);"></div> 5 - 10 min</div>
+        <div class="legend-row"><div class="dot" style="background: rgba(248, 113, 113, 0.6);"></div> 10 - 15 min</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -43,59 +143,67 @@
   require([
     "esri/Map",
     "esri/views/SceneView",
-    "esri/layers/GeoJSONLayer"
-  ], function(Map, SceneView, GeoJSONLayer) {
+    "esri/layers/GeoJSONLayer",
+    "esri/layers/SceneLayer"
+  ], function(Map, SceneView, GeoJSONLayer, SceneLayer) {
 
-    const renderer = {
-      type: "unique-value",
-      field: "Name", 
-      uniqueValueInfos: [
-        { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.5], outline: { color: "white", width: 1 } } },
-        { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.5], outline: { color: "white", width: 1 } } },
-        { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.5], outline: { color: "white", width: 1 } } }
-      ]
-    };
-
-    const geojsonLayer = new GeoJSONLayer({
+    // 1. Ditt exporterade GeoJSON-lager
+    const zoneLayer = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson",
-      renderer: renderer,
-      popupTemplate: { title: "Resezon: {Name} min", content: "Gångavstånd till Öxnehaga centrum." }
+      renderer: {
+        type: "unique-value",
+        field: "Name",
+        uniqueValueInfos: [
+          { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.5], outline: { color: "white", width: 1 } } },
+          { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.5], outline: { color: "white", width: 1 } } },
+          { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.5], outline: { color: "white", width: 1 } } }
+        ]
+      },
+      title: "Gångzoner"
     });
 
     const map = new Map({
-      basemap: "hybrid", // "Hybrid" visar både satellitbilder och vägnamn
+      basemap: "hybrid",
       ground: "world-elevation",
-      layers: [geojsonLayer]
+      layers: [zoneLayer]
     });
 
     const view = new SceneView({
       container: "viewDiv",
       map: map,
-      camera: {
-        position: { longitude: 14.261, latitude: 57.781, z: 1200 }, // Lägre höjd för att se detaljer bättre
-        tilt: 55 // Mer lutning för bättre 3D-känsla
-      },
-      environment: {
-        lighting: { directShadowsEnabled: true, ambientOcclusionEnabled: true } // Aktiverar snygga skuggor
-      }
+      camera: { position: { longitude: 14.261, latitude: 57.781, z: 1200 }, tilt: 55 },
+      environment: { lighting: { directShadowsEnabled: true } }
     });
 
-    // Toggle-knappen för 2D/3D
+    // --- FUNKTIONALITET FÖR MENYN ---
+
+    // 2D/3D Växlare
     let is3D = true;
-    const btn = document.getElementById("toggleBtn");
-    btn.addEventListener("click", () => {
+    document.getElementById("viewToggle").addEventListener("click", (e) => {
       if (is3D) {
         view.goTo({ tilt: 0, heading: 0 });
-        btn.innerText = "Switch to 3D View";
+        e.target.innerText = "Switch to 3D";
       } else {
         view.goTo({ tilt: 55, heading: 0 });
-        btn.innerText = "Switch to 2D View";
+        e.target.innerText = "Switch to 2D";
       }
       is3D = !is3D;
     });
 
-    geojsonLayer.when(() => {
-      view.goTo(geojsonLayer.fullExtent);
+    // Lager On/Off
+    document.getElementById("zoneToggle").addEventListener("change", (e) => {
+      zoneLayer.visible = e.target.checked;
+    });
+
+    // (Förberedd för dina framtida exporter)
+    document.getElementById("buildingToggle").addEventListener("change", (e) => {
+      // Här kan du lägga till logik för att visa byggnadslager
+      console.log("Byggnader: " + e.target.checked);
+    });
+
+    // Zooma till data
+    zoneLayer.when(() => {
+      view.goTo(zoneLayer.fullExtent);
     });
   });
 </script>
