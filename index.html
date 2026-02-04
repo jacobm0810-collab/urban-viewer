@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
   <meta charset="utf-8">
   <title>Urban Management | Digital Twin</title>
@@ -24,7 +24,7 @@
 <header>
   <div class="logo">Urban Management</div>
   <div id="status" style="text-align: right; font-size: 0.8rem;">
-    <b id="city-label">Jönköping, SE</b><br>
+    <b id="city-label">Jonkoping, SE</b><br>
     <span id="weather-label" style="color: #0284c7">Ansluter till karta...</span>
   </div>
 </header>
@@ -34,17 +34,16 @@
   <div id="sidebar">
     <section>
       <h3>Kameravy</h3>
-      <button id="viewBtn" class="btn-main">Växla till 2D</button>
+      <button id="viewBtn" class="btn-main">Vaxla till 2D</button>
     </section>
     <section>
       <h3>Lager</h3>
-      <p style="font-size: 0.8rem; color: #64748b;">3D Byggnader och Gångzoner laddas automatiskt.</p>
+      <p style="font-size: 0.8rem; color: #64748b;">3D Byggnader och Isokroner laddas automatiskt.</p>
     </section>
   </div>
 </div>
 
 <script>
-  // Körs när sidan laddats helt
   window.addEventListener('load', function() {
     if (typeof require !== 'undefined') {
       require([
@@ -53,3 +52,52 @@
         "esri/layers/GeoJSONLayer",
         "esri/layers/OSMBuildingsLayer"
       ], function(Map, SceneView, GeoJSONLayer, OSMBuildingsLayer) {
+        
+        const zones = new GeoJSONLayer({
+          url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson",
+          renderer: {
+            type: "unique-value",
+            field: "Name",
+            uniqueValueInfos: [
+              { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.5] } },
+              { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.5] } },
+              { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.5] } }
+            ]
+          }
+        });
+
+        const map = new Map({ 
+          basemap: "hybrid", 
+          ground: "world-elevation", 
+          layers: [zones, new OSMBuildingsLayer()] 
+        });
+
+        const view = new SceneView({
+          container: "viewDiv",
+          map: map,
+          camera: { position: { longitude: 14.261, latitude: 57.781, z: 1500 }, tilt: 50 }
+        });
+
+        view.when(() => {
+          document.getElementById("weather-label").innerText = "Kartan ar redo";
+          
+          fetch("https://api.open-meteo.com/v1/forecast?latitude=57.78&longitude=14.26&current_weather=true")
+            .then(r => r.json())
+            .then(d => {
+              document.getElementById("weather-label").innerText = Math.round(d.current_weather.temperature) + " Celsius | Klart";
+            });
+        });
+
+        let is3D = true;
+        document.getElementById("viewBtn").onclick = function() {
+          is3D = !is3D;
+          view.goTo({ tilt: is3D ? 50 : 0 });
+          this.innerText = is3D ? "Vaxla till 2D" : "Vaxla till 3D";
+        };
+
+      });
+    }
+  });
+</script>
+</body>
+</html>
