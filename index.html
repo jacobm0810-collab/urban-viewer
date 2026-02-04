@@ -2,104 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Urban Management</title>
-
-  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+  <title>Urban Management | Öxnehaga Analysis</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/dark/main.css">
   <script src="https://js.arcgis.com/4.29/"></script>
 
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: Arial, sans-serif;
-    }
-
-    header {
-      height: 60px;
-      background: #0b1220;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 30px;
-    }
-
-    header nav button {
-      background: none;
-      border: none;
-      color: #cbd5e1;
-      margin-left: 20px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    header nav button.active {
-      color: #38bdf8;
-      font-weight: bold;
-    }
-
-    #app {
-      height: calc(100% - 60px);
-      position: relative;
-    }
-
-    #viewDiv {
-      height: 100%;
-      width: 100%;
-    }
-
-    .overlay {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: white;
-      padding: 16px;
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      display: none;
-    }
-
-    .overlay.visible {
-      display: block;
-    }
+    :root { --bg-dark: #0f172a; --accent: #38bdf8; }
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; background: var(--bg-dark); color: white; overflow: hidden; }
+    header { height: 60px; background: var(--bg-dark); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 1px solid #334155; }
+    .logo { font-weight: 800; color: var(--accent); text-transform: uppercase; }
+    #app { height: calc(100% - 60px); position: relative; }
+    #viewDiv { height: 100%; width: 100%; }
+    .overlay { position: absolute; top: 20px; right: 20px; width: 250px; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(10px); padding: 15px; border-radius: 12px; border: 1px solid #475569; }
+    .legend-item { display: flex; align-items: center; margin-top: 5px; font-size: 12px; }
+    .color-box { width: 15px; height: 15px; margin-right: 10px; border-radius: 3px; }
   </style>
 </head>
 
 <body>
 
 <header>
-  <div>Urban Management</div>
-  <nav>
-    <button class="tab active" data-panel="none">Map</button>
-    <button class="tab" data-panel="traffic">Traffic</button>
-    <button class="tab" data-panel="environment">Environment</button>
-  </nav>
+  <div class="logo">Urban Management | Öxnehaga</div>
 </header>
 
 <div id="app">
   <div id="viewDiv"></div>
-
-  <div id="traffic" class="overlay">
-    Traffic analysis content
-  </div>
-
-  <div id="environment" class="overlay">
-    Environmental analysis content
+  <div class="overlay">
+    <h4 style="margin:0 0 10px 0">Gångavstånd (min)</h4>
+    <div class="legend-item"><div class="color-box" style="background: #4ade80;"></div> 0 - 5 min</div>
+    <div class="legend-item"><div class="color-box" style="background: #facc15;"></div> 5 - 10 min</div>
+    <div class="legend-item"><div class="color-box" style="background: #f87171;"></div> 10 - 15 min</div>
   </div>
 </div>
 
 <script>
-  // ArcGIS Map
   require([
     "esri/Map",
-    "esri/views/SceneView"
-  ], function(Map, SceneView) {
+    "esri/views/SceneView",
+    "esri/layers/GeoJSONLayer"
+  ], function(Map, SceneView, GeoJSONLayer) {
+
+    // 1. Definiera hur zonerna ska se ut baserat på namnet i din fil
+    const renderer = {
+      type: "unique-value",
+      field: "Name", // Tar värdet från din geojson (t.ex. "0 - 5")
+      uniqueValueInfos: [
+        { value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.5], outline: { color: "white", width: 1 } } },
+        { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.5], outline: { color: "white", width: 1 } } },
+        { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.5], outline: { color: "white", width: 1 } } }
+      ]
+    };
+
+    // 2. Skapa lagret från din exporterade fil
+    const geojsonLayer = new GeoJSONLayer({
+      url: "./Polygons_FeaturesToJSON.geojson",
+      renderer: renderer,
+      popupTemplate: {
+        title: "Resezon: {Name} minuter",
+        content: "Detta område ligger inom {Name} minuters gångavstånd."
+      }
+    });
 
     const map = new Map({
-      basemap: "gray-vector",
-      ground: "world-elevation"
+      basemap: "arcgis-topographic",
+      layers: [geojsonLayer]
     });
 
     const view = new SceneView({
@@ -107,33 +73,14 @@
       map: map,
       camera: {
         position: {
-          latitude: 59.3293,
-          longitude: 18.0686,
-          z: 3000
+          longitude: 14.261, // Centrerat på Öxnehaga
+          latitude: 57.781,
+          z: 2000
         },
-        tilt: 65
-      }
-    });
-  });
-
-  // Tabs
-  const tabs = document.querySelectorAll(".tab");
-  const panels = document.querySelectorAll(".overlay");
-
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      tabs.forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-
-      panels.forEach(p => p.classList.remove("visible"));
-
-      const panelId = tab.dataset.panel;
-      if (panelId !== "none") {
-        document.getElementById(panelId).classList.add("visible");
+        tilt: 45
       }
     });
   });
 </script>
-
 </body>
 </html>
