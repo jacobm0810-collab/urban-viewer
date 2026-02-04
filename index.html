@@ -30,7 +30,6 @@
     }
 
     .logo { font-weight: 800; font-size: 1.1rem; color: #000; text-transform: uppercase; letter-spacing: 1px; }
-    .location-box { text-align: right; }
     #weather-info { font-size: 0.8rem; color: var(--accent); font-weight: 700; }
 
     #main-wrapper { display: flex; height: calc(100% - 60px); width: 100%; }
@@ -63,7 +62,15 @@
     .legend { background: #f8fafc; border: 1px solid var(--border); padding: 15px; border-radius: 8px; }
     .legend-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; margin-bottom: 5px; }
     .box { width: 14px; height: 14px; border-radius: 3px; }
-    .dot { width: 12px; height: 12px; border-radius: 50%; border: 1px solid white; }
+    
+    /* Ikon för lekplats i teckenförklaringen */
+    .playground-icon-legend {
+      width: 18px;
+      height: 18px;
+      background-image: url('https://static.arcgis.com/images/Symbols/OutdoorRecreation/Playground.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+    }
   </style>
 </head>
 
@@ -108,7 +115,10 @@
         <div class="legend-row"><div class="box" style="background: rgba(74, 222, 128, 0.7);"></div> 0 - 5 minuter</div>
         <div class="legend-row"><div class="box" style="background: rgba(250, 204, 21, 0.7);"></div> 5 - 10 minuter</div>
         <div class="legend-row"><div class="box" style="background: rgba(248, 113, 113, 0.7);"></div> 10 - 15 minuter</div>
-        <div class="legend-row" style="margin-top: 10px;"><div class="dot" style="background: #fb923c;"></div> Lekplatser</div>
+        <div class="legend-row" style="margin-top: 10px;">
+          <div class="playground-icon-legend"></div> 
+          <span>Lekplatser</span>
+        </div>
       </div>
     </section>
   </div>
@@ -136,20 +146,20 @@
       }
     });
 
-    // 2. Lager för Lekplatser (Hämtat från din GitHub)
+    // 2. Lager för Lekplatser med Bildsymbol (Ikon)
     const playgroundLayer = new GeoJSONLayer({
       url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSONlekpark.geojson",
       popupTemplate: {
         title: "Lekplats",
-        content: "Information om lekplatsen hittas i datafälten."
+        content: "Här finns en lekplats i Öxnehaga."
       },
       renderer: {
         type: "simple",
         symbol: {
-          type: "simple-marker",
-          color: [251, 146, 60], // Snygg orange färg
-          size: "10px",
-          outline: { color: "white", width: 1.5 }
+          type: "picture-marker",
+          url: "https://static.arcgis.com/images/Symbols/OutdoorRecreation/Playground.png",
+          width: "24px",
+          height: "24px"
         }
       }
     });
@@ -166,7 +176,7 @@
       camera: { position: { longitude: 14.261, latitude: 57.781, z: 1500 }, tilt: 50 }
     });
 
-    // Väder-funktion
+    // Väder
     async function fetchWeather(lat, lon) {
       try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
@@ -183,32 +193,18 @@
       });
     });
 
-    // Växla 2D/3D knapp
+    // Kontroller
     let is3D = true;
     document.getElementById("toggleMode").addEventListener("click", function() {
-      if (is3D) { 
-        view.goTo({ tilt: 0, heading: 0 }); 
-        this.innerText = "Växla till 3D-vy"; 
-      } else { 
-        view.goTo({ tilt: 50, heading: 0 }); 
-        this.innerText = "Växla till 2D-vy"; 
-      }
+      if (is3D) { view.goTo({ tilt: 0, heading: 0 }); this.innerText = "Växla till 3D-vy"; } 
+      else { view.goTo({ tilt: 50, heading: 0 }); this.innerText = "Växla till 2D-vy"; }
       is3D = !is3D;
     });
 
-    // Switchar för att tända/släcka lager
-    document.getElementById("layerZones").addEventListener("change", (e) => { 
-      geojsonLayer.visible = e.target.checked; 
-    });
-
-    document.getElementById("layerPlaygrounds").addEventListener("change", (e) => { 
-      playgroundLayer.visible = e.target.checked; 
-    });
+    document.getElementById("layerZones").addEventListener("change", (e) => { geojsonLayer.visible = e.target.checked; });
+    document.getElementById("layerPlaygrounds").addEventListener("change", (e) => { playgroundLayer.visible = e.target.checked; });
     
-    // Zooma till lagret när det laddats
-    geojsonLayer.when(() => { 
-      view.goTo(geojsonLayer.fullExtent); 
-    });
+    geojsonLayer.when(() => { view.goTo(geojsonLayer.fullExtent); });
   });
 </script>
 
