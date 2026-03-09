@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Urban Management - Jönköping Dashboard</title>
+  <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.29/"></script>
+  <style>
+    :root { --header-bg: #ffffff; --sidebar-bg: #ffffff; --text: #1e293b; --accent: #ef4444; --police: #0ea5e9; --hospital: #facc15; --border: #e2e8f0; }
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; font-family: 'Segoe UI', sans-serif; background: #f1f5f9; color: var(--text); overflow: hidden; }
+    header { height: 60px; background: var(--header-bg); display: flex; align-items: center; justify-content: space-between; padding: 0 30px; border-bottom: 2px solid var(--border); z-index: 100; }
+    .logo { font-weight: 800; font-size: 1.1rem; color: #000; text-transform: uppercase; letter-spacing: 1px; }
+    #main-wrapper { display: flex; height: calc(100% - 60px); width: 100%; }
+    #viewDiv { flex: 1; height: 100%; background: #e5e7eb; outline: none; }
+    #sidebar { width: 320px; background: var(--sidebar-bg); border-left: 2px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 10; }
+    h3 { font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin: 0; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+    .control-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-top: 8px; }
+    .switch { position: relative; width: 34px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #000000 !important; }
+    input:checked + .slider:before { transform: translateX(14px); }
+    .btn-basemap { width: 48%; padding: 8px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: #fff; font-weight: 600; }
+    .btn-basemap.active { background: #000000; color: white; border-color: #000000; }
+    .legend { background: #f8fafc; border: 1px solid var(--border); padding: 12px; border-radius: 8px; font-size: 0.8rem; }
+    .legend-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .legend-icon { width: 26px; height: 26px; }
+    .legend-box { width: 20px; height: 20px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
+    .bim-btn { width: 100%; background-color: #ef4444 !important; color: black !important; border: none; padding: 12px; border-radius: 4px; font-weight: 800; cursor: pointer; display: block; text-align: center; text-decoration: none; text-transform: uppercase; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Urban Management</div>
+  <div style="text-align: right; line-height: 1.2;">
+    <div id="location-text" style="font-weight: 700; font-size: 0.9rem;">Jönköping, Sweden</div>
+    <div id="weather-info" style="color:#0284c7; font-size:0.8rem; font-weight:600;">Fetching data...</div>
+  </div>
+</header>
+
+<div id="main-wrapper">
+  <div id="viewDiv"></div>
+  <div id="sidebar">
+    <section>
+      <h3>Basemaps</h3>
+      <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+        <button id="btn-hybrid" class="btn-basemap active">Satellite</button>
+        <button id="btn-gray" class="btn-basemap">Light Gray</button>
+      </div>
+    </section>
+    <section>
+      <h3>Analysis Tools</h3>
+      <div class="control-item"><span>Fire Analysis Öxnehaga</span><label class="switch"><input type="checkbox" id="layerFire"><span class="slider"></span></label></div>
+      <div class="control-item"><span>Police Analysis Öxnehaga</span><label class="switch"><input type="checkbox" id="layerPolice"><span class="slider"></span></label></div>
+      <div class="control-item"><span>Hospital Route Analysis</span><label class="switch"><input type="checkbox" id="layerHospital"><span class="slider"></span></label></div>
+      <div class="control-item"><span>Walking Analysis (0-15 min)</span><label class="switch"><input type="checkbox" id="layerZones"><span class="slider"></span></label></div>
+    </section>
+    <section>
+      <h3>Map Layers</h3>
+      <div class="control-item"><span>Roads</span><label class="switch"><input type="checkbox" id="layerRoads" checked><span class="slider"></span></label></div>
+      <div class="control-item"><span>3D Buildings</span><label class="switch"><input type="checkbox" id="layer3D" checked><span class="slider"></span></label></div>
+      <div class="control-item"><span>Grocery Stores</span><label class="switch"><input type="checkbox" id="layerShops" checked><span class="slider"></span></label></div>
+      <div class="control-item"><span>Health Centers</span><label class="switch"><input type="checkbox" id="layerHealth" checked><span class="slider"></span></label></div>
+      <div class="control-item"><span>Preschools</span><label class="switch"><input type="checkbox" id="layerPreschool" checked><span class="slider"></span></label></div>
+      <div class="control-item"><span>Playgrounds</span><label class="switch"><input type="checkbox" id="layerPlaygrounds" checked><span class="slider"></span></label></div>
+      <div class="control-item"><span>Buses</span><label class="switch"><input type="checkbox" id="layerBussar" checked><span class="slider"></span></label></div>
+      <div class="control-item"><span>Parking</span><label class="switch"><input type="checkbox" id="layerParking" checked><span class="slider"></span></label></div>
+    </section>
+    <section><h3>Legend</h3><div class="legend" id="dynamic-legend"></div></section>
+  </div>
+</div>
+
+<script>
+require(["esri/Map", "esri/views/SceneView", "esri/layers/GeoJSONLayer", "esri/layers/GraphicsLayer", "esri/Graphic", "esri/rest/locator"],
+function(Map, SceneView, GeoJSONLayer, GraphicsLayer, Graphic, locator) {
+    const weatherKey = "6eb3808cc5373d9d3013af2e2d23f673";
+    const locatorUrl = "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer";
+
+    const icons = {
+      fire: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#ef4444" stroke="white" stroke-width="4"/><path d="M50 15c0 0-15 20-15 35s15 35 15 35 15-20 15-35-15-35-15-35zm-5 45c0 0-8-10-8-18s8-22 8-22 8 10 8 18-8 22-8 22z" fill="white" opacity="0.9"/></svg>`),
+      police: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#0ea5e9" stroke="white" stroke-width="4"/><path d="M15 62h70v8H15z M22 62l6-18h44l6 18 M45 36h10v8H45z M35 62h8v5h-8z M57 62h8v5h-8z" fill="white"/><circle cx="50" cy="34" r="4" fill="white"/></svg>`),
+      hospital: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="#ef4444" stroke="white" stroke-width="6"/><path d="M50 25 V75 M25 50 H75" stroke="white" stroke-width="14"/></svg>`),
+      play: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="#4CAF50" stroke="white" stroke-width="6" /><path d="M30,30 L35,30 L35,70 L30,70 Z M35,35 L70,70 L75,70 L75,65 L40,30 Z" fill="white" /></svg>`),
+      shop: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="#8B4513" stroke="white" stroke-width="6" /><path d="M30,35 H38 L42,65 H75 L80,40 H38" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>`),
+      bus: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="#334155" stroke="white" stroke-width="6" /><path d="M25,30 a5,5 0 0 1 5,-5 h40 a5,5 0 0 1 5,5 v35 a5,5 0 0 1 -5,5 h-40 a5,5 0 0 1 -5,-5 z" fill="white" /><rect x="30" y="32" width="40" height="18" fill="#334155" /><circle cx="37" cy="62" r="4" fill="#334155" /><circle cx="63" cy="62" r="4" fill="#334155" /></svg>`),
+      health: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="white" stroke="#ef4444" stroke-width="6" /><path d="M50,25 v50 M25,50 h50" stroke="#ef4444" stroke-width="12"/></svg>`),
+      pre: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="#FFB300" stroke="white" stroke-width="6" /><path d="M50,30 C60,30 65,40 50,45 C35,40 40,30 50,30 Z" fill="white" /><rect x="35" y="45" width="30" height="8" rx="4" fill="white" /><circle cx="50" cy="65" r="12" fill="none" stroke="white" stroke-width="5" /></svg>`),
+      park: "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="45" fill="#0284c7" stroke="white" stroke-width="6" /><text x="50" y="72" font-family="Arial" font-size="60" font-weight="bold" fill="white" text-anchor="middle">P</text></svg>`)
+    };
+
+    function getTravelTime(attr) {
+        let val = 0;
+        for (let key in attr) { if (key.toLowerCase().includes("total_traveltime") || key.toLowerCase().includes("total_minutes")) { val = parseFloat(attr[key]); break; } }
+        if (!val) return "<i>Travel data missing</i>";
+        const mins = Math.floor(val); const secs = Math.round((val - mins) * 60);
+        return `<b>${mins} min ${secs} sec</b>`;
+    }
+
+    const legendDiv = document.getElementById("dynamic-legend");
+    function renderLegend() {
+      let h = "";
+      if(document.getElementById("layerZones").checked) {
+        h += `<div><strong>Walking Distance</strong><div class="legend-row"><div class="legend-box" style="background: rgba(74, 222, 128, 0.7);"></div><span>0-5 min</span></div><div class="legend-row"><div class="legend-box" style="background: rgba(250, 204, 21, 0.7);"></div><span>5-10 min</span></div><div class="legend-row"><div class="legend-box" style="background: rgba(248, 113, 113, 0.7);"></div><span>10-15 min</span></div></div><hr style="border:0.5px solid #eee;">`;
+      }
+      if(document.getElementById("layerFire").checked) { h += `<div class="legend-row"><div style="width:20px;height:4px;background:#ef4444;"></div><span>Route (Fire)</span></div><div class="legend-row"><img src="${icons.fire}" class="legend-icon"><span>Fire Station</span></div>`; }
+      if(document.getElementById("layerPolice").checked) { h += `<div class="legend-row"><div style="width:20px;height:4px;background:#0ea5e9;"></div><span>Route (Police)</span></div><div class="legend-row"><img src="${icons.police}" class="legend-icon"><span>Police Station</span></div>`; }
+      if(document.getElementById("layerHospital").checked) { h += `<div class="legend-row"><div style="width:20px;height:4px;background:#facc15;"></div><span>Route (Hospital)</span></div><div class="legend-row"><img src="${icons.hospital}" class="legend-icon"><span>Ryhov County Hospital</span></div>`; }
+     
+      h += `<div style="margin-top:10px;"><strong>Map Layers</strong></div>`;
+      const poiLabels = { shop: "Grocery Stores", health: "Health Centers", pre: "Preschools", play: "Playgrounds", bus: "Buses", park: "Parking" };
+      Object.keys(poiLabels).forEach(k => {
+          h += `<div class="legend-row"><img src="${icons[k]}" class="legend-icon"><span>${poiLabels[k]}</span></div>`;
+      });
+      legendDiv.innerHTML = h;
+    }
+
+    const firePOI = new GraphicsLayer({ visible: false });
+    [{ coords: [14.2232, 57.7816] }, { coords: [14.2795, 57.7880] }].forEach(s => firePOI.add(new Graphic({ geometry: { type: "point", x: s.coords[0], y: s.coords[1] }, symbol: { type: "picture-marker", url: icons.fire, width: "32px", height: "32px" } })));
+    const policePOI = new GraphicsLayer({ visible: false });
+    policePOI.add(new Graphic({ geometry: { type: "point", x: 14.1666, y: 57.7800 }, symbol: { type: "picture-marker", url: icons.police, width: "38px", height: "38px" } }));
+    const hospitalPOI = new GraphicsLayer({ visible: false });
+    hospitalPOI.add(new Graphic({ geometry: { type: "point", x: 14.191667, y: 57.767500 }, symbol: { type: "picture-marker", url: icons.hospital, width: "32px", height: "32px" } }));
+
+    const roadsLayer = new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-BILV%C3%84GAR.geojson", renderer: { type: "simple", symbol: { type: "simple-line", color: [255, 255, 255, 0.9], width: 4 } } });
+    const fireRouteLayer = new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-Brand-route.geojson", visible: false, outFields: ["*"], renderer: { type: "simple", symbol: { type: "simple-line", color: "#ef4444", width: 5 } }, popupTemplate: { title: "Fire Analysis", content: (f) => `Travel Time: ${getTravelTime(f.graphic.attributes)}` } });
+    const policeRouteLayer = new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-Polis-route.geojson", visible: false, outFields: ["*"], renderer: { type: "simple", symbol: { type: "simple-line", color: "#0ea5e9", width: 5 } }, popupTemplate: { title: "Police Analysis", content: (f) => `Travel Time: ${getTravelTime(f.graphic.attributes)}` } });
+    const hospitalRouteLayer = new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-Hospital-route.geojson", visible: false, outFields: ["*"], renderer: { type: "simple", symbol: { type: "simple-line", color: "#facc15", width: 5 } }, popupTemplate: { title: "Hospital Route", content: (f) => `Travel Time: ${getTravelTime(f.graphic.attributes)}` } });
+
+    const b3d = new GeoJSONLayer({
+      url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-BYGGNADER%20(2).json",
+      outFields: ["*"],
+      popupTemplate: {
+        title: "Building Information",
+        content: (f) => {
+            const lat = f.graphic.geometry.extent.center.latitude;
+            const lon = f.graphic.geometry.extent.center.longitude;
+            const pid = "UIM-" + Math.abs(Math.round(lat * 10000)) + Math.abs(Math.round(lon * 10000));
+            let res = `Type: <b>Building</b><br>ID: #${pid}`;
+           
+            if (pid === "UIM-577746142544") {
+                res += `<div class="bim-btn bim-btn-click1" style="color: black !important; font-weight: 800;">OPEN 3D MODEL</div>`;
+            }
+            if (pid === "UIM-577692142609") {
+                res += `<div class="bim-btn bim-btn-click2" style="color: black !important; font-weight: 800;">OPEN 3D MODEL</div>`;
+            }
+            return res;
+        }
+      },
+      // Restored simple 12m height extrusion to ensure buildings are not flat
+            renderer: {
+        type: "simple",
+        symbol: {
+          type: "polygon-3d",
+          symbolLayers: [{
+            type: "extrude",
+            size: 10,
+            material: { color: [255, 255, 255, 0.9] }
+          }]
+        },
+        visualVariables: [{
+          type: "size",
+          axis: "height",
+          valueExpression: "var cx = Extent($feature).xmin; var cy = Extent($feature).ymin; var area = Area($feature, 'square-meters'); var seed = (cx * 1000 + cy * 1000) % 97; When(area > 2000, 25 + seed % 30, area > 800, 15 + seed % 20, area > 300, 8 + seed % 15, 5 + seed % 8);",
+          valueExpressionTitle: "Building Height"
+        }]
+      }
+    });
+
+    const zones = new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON.geojson", visible: false, renderer: { type: "unique-value", field: "Name", uniqueValueInfos: [{ value: "0 - 5", symbol: { type: "simple-fill", color: [74, 222, 128, 0.5] } }, { value: "5 - 10", symbol: { type: "simple-fill", color: [250, 204, 21, 0.5] } }, { value: "10 - 15", symbol: { type: "simple-fill", color: [248, 113, 113, 0.5] } }] } });
+   
+    const poiLayers = {
+      shop: new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-MATAFF%C3%84R.geojson", renderer: { type: "simple", symbol: { type: "picture-marker", url: icons.shop, width: "26px" } } }),
+      health: new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-V%C3%85RDCENTRAL.geojson", renderer: { type: "simple", symbol: { type: "picture-marker", url: icons.health, width: "26px" } } }),
+      pre: new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-F%C3%96RSKOLA.geojson", renderer: { type: "simple", symbol: { type: "picture-marker", url: icons.pre, width: "26px" } } }),
+      play: new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-LEKPARK.geojson", renderer: { type: "simple", symbol: { type: "picture-marker", url: icons.play, width: "26px" } } }),
+      bus: new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-BUSSAR.geojson", renderer: { type: "simple", symbol: { type: "picture-marker", url: icons.bus, width: "26px" } } }),
+      park: new GeoJSONLayer({ url: "https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-PARKING.geojson", renderer: { type: "simple", symbol: { type: "picture-marker", url: icons.park, width: "26px" } } })
+    };
+
+    const map = new Map({
+      basemap: "hybrid",
+      ground: "world-elevation",
+      layers: [roadsLayer, b3d, zones, fireRouteLayer, firePOI, policeRouteLayer, policePOI, hospitalRouteLayer, hospitalPOI, ...Object.values(poiLayers)]
+    });
+
+    const view = new SceneView({ container: "viewDiv", map: map, camera: { position: [14.260427, 57.755347, 3000], tilt: 35, heading: 0 } });
+
+    // Event listener for building pop-up buttons
+    document.addEventListener("click", function(e) {
+      if (e.target && e.target.classList.contains("bim-btn-click1")) {
+        window.location.href = "bim_viewer.html";
+      }
+      if (e.target && e.target.classList.contains("bim-btn-click2")) {
+        window.location.href = "bim_viewer2.html";
+      }
+    });
+
+    document.getElementById("layerFire").onchange = (e) => { fireRouteLayer.visible = firePOI.visible = e.target.checked; renderLegend(); };
+    document.getElementById("layerPolice").onchange = (e) => { policeRouteLayer.visible = policePOI.visible = e.target.checked; renderLegend(); };
+    document.getElementById("layerHospital").onchange = (e) => { hospitalRouteLayer.visible = hospitalPOI.visible = e.target.checked; renderLegend(); };
+    document.getElementById("layerZones").onchange = (e) => { zones.visible = e.target.checked; renderLegend(); };
+   
+    const lMap = { layerRoads: roadsLayer, layer3D: b3d, layerShops: poiLayers.shop, layerHealth: poiLayers.health, layerPreschool: poiLayers.pre, layerPlaygrounds: poiLayers.play, layerBussar: poiLayers.bus, layerParking: poiLayers.park };
+    Object.keys(lMap).forEach(id => { document.getElementById(id).onchange = (e) => { lMap[id].visible = e.target.checked; renderLegend(); }; });
+    document.getElementById("btn-hybrid").onclick = () => { map.basemap = "hybrid"; };
+    document.getElementById("btn-gray").onclick = () => { map.basemap = "gray-vector"; };
+
+    view.watch("stationary", s => { if(s) {
+        locator.locationToAddress(locatorUrl, { location: view.center }).then(r => document.getElementById("location-text").innerText = (r.attributes.City || "Jönköping") + ", Sweden");
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${view.center.latitude}&lon=${view.center.longitude}&units=metric&appid=${weatherKey}`).then(r => r.json()).then(d => {
+            document.getElementById("weather-info").innerText = `${Math.round(d.main.temp)}°C | ${new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'})}`;
+        });
+    }});
+    renderLegend();
+});
+</script>
+</body>
+</html>

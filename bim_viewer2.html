@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>BIM Viewer - Snabbvingevägen 12</title>
+    <style>
+        body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #cbd5e1; font-family: 'Segoe UI', sans-serif; }
+        #container { width: 100%; height: 100%; }
+       
+        .ui-overlay {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(255,255,255,0.95); padding: 20px;
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10; border-left: 5px solid #ef4444; width: 260px;
+            max-height: calc(100vh - 60px); overflow-y: auto;
+        }
+
+        .info-sidebar {
+            position: absolute; top: 20px; right: 20px;
+            background: rgba(255,255,255,0.95); padding: 25px;
+            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10; border-right: 5px solid #0ea5e9; width: 300px;
+        }
+
+        .section-tools { margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
+        .tool-label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px; color: #1e293b; }
+        input[type="range"] { width: 100%; margin-bottom: 15px; cursor: pointer; accent-color: #ef4444; }
+
+        h2 { margin: 0; font-size: 1.1rem; color: #1e293b; text-transform: uppercase; letter-spacing: 1px; }
+        h3 { font-size: 0.75rem; text-transform: uppercase; color: #64748b; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
+        .info-label { color: #64748b; font-weight: 500; }
+        .info-value { color: #1e293b; font-weight: 700; }
+
+        .back-link { display: inline-block; margin-top: 10px; color: #ef4444; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+
+        .sv-btn {
+            width: 100%; background-color: #f59e0b; color: white; border: none; padding: 12px;
+            border-radius: 4px; font-weight: 800; cursor: pointer; text-transform: uppercase;
+            margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .sim-btn {
+            width: 100%; background-color: #10b981; color: white; border: none; padding: 10px;
+            border-radius: 4px; font-weight: 800; cursor: pointer; text-transform: uppercase;
+            margin-top: 10px; font-size: 0.75rem; transition: background 0.3s;
+        }
+
+        .basemap-section { margin-top: 15px; padding-top: 15px; border-top: 2px solid #0ea5e9; }
+        .btn-basemap-3d {
+            width: 48%; padding: 8px; font-size: 0.75rem; border: 1px solid #e2e8f0;
+            border-radius: 6px; cursor: pointer; background: #fff; font-weight: 600;
+        }
+        .btn-basemap-3d.active { background: #000; color: white; border-color: #000; }
+    </style>
+</head>
+<body>
+
+    <div class="ui-overlay">
+        <h2>BIM Section View</h2>
+        <div class="section-tools">
+            <span class="tool-label">Horizontal Section (Y)</span>
+            <input type="range" id="clip-y" min="0" max="25" step="0.1" value="25">
+            <span class="tool-label">Vertical Section (X)</span>
+            <input type="range" id="clip-x" min="-40" max="25" step="0.1" value="25">
+        </div>
+
+        <div class="section-tools" style="border-top: 2px solid #10b981;">
+            <span class="tool-label" style="color: #059669;">☀️ Daylight Simulation</span>
+            <div id="clock-display" style="font-size: 1.2rem; text-align: center; font-weight: 800; padding: 5px; background: #ecfdf5; border-radius: 4px; margin-bottom: 10px;">12:00</div>
+            <button id="btn-simulate" class="sim-btn">Start Simulation (06:00)</button>
+        </div>
+
+        <!-- NYTT: Basemap-kontroll -->
+        <div class="basemap-section">
+            <span class="tool-label" style="color: #0ea5e9;">🗺️ Basemap</span>
+            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                <button id="btn-satellite" class="btn-basemap-3d active" onclick="setBasemap('satellite')">Satellite</button>
+                <button id="btn-plain" class="btn-basemap-3d" onclick="setBasemap('plain')">Plain</button>
+            </div>
+        </div>
+
+        <a href="index.html" class="back-link">← Back to Map</a>
+    </div>
+
+    <div class="info-sidebar">
+        <h2>Building Information</h2>
+        <h3>General Data</h3>
+        <div class="info-row"><span class="info-label">Model ID</span><span class="info-value">Snabbvingevägen 12</span></div>
+        <div class="info-row"><span class="info-label">Total Area (GFA)</span><span class="info-value">420 m²</span></div>
+        <div class="info-row"><span class="info-label">Floors</span><span class="info-value">2 + Garage</span></div>
+        <div class="info-row"><span class="info-label">Status</span><span class="info-value" style="color:#10b981;">As-Built</span></div>
+
+        <h3>Energy Performance</h3>
+        <div class="info-row"><span class="info-label">U-value External Wall</span><span class="info-value">0.13 W/m²K</span></div>
+        <div class="info-row"><span class="info-label">U-value Windows</span><span class="info-value">0.85 W/m²K</span></div>
+        <div class="info-row"><span class="info-label">Energy Class</span><span class="info-value">Gold</span></div>
+
+        <h3>Technical Data</h3>
+        <div class="info-row"><span class="info-label">Structural System</span><span class="info-value">CLT / Concrete</span></div>
+        <div class="info-row"><span class="info-label">Ventilation</span><span class="info-value">HRV (85% Recovery)</span></div>
+        <div class="info-row"><span class="info-label">Heating</span><span class="info-value">District Heating</span></div>
+
+        <button class="sv-btn" onclick="openStreetView()">📍 Open Street View</button>
+    </div>
+
+    <div id="container"></div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls, model, sun, hemiLight;
+        let isSimulating = false;
+        let currentHour = 12;
+        let groundPlane = null;
+
+        const normalX = new THREE.Vector3(-1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), (Math.PI / 0.52));
+        const localPlanes = [new THREE.Plane(new THREE.Vector3(0, -1, 0), 25), new THREE.Plane(normalX, 25)];
+
+        window.openStreetView = function() {
+            window.open("https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=57.769294,14.260907", "_blank");
+        };
+
+        const centerCoords = [14.260907, 57.769294];
+        const sceneScale = 220000;
+        const latCorr = 1.885;
+
+        // ======= NYTT: Basemap-funktionalitet =======
+        function lonLatToTile(lon, lat, zoom) {
+            const n = Math.pow(2, zoom);
+            const x = Math.floor((lon + 180) / 360 * n);
+            const latRad = lat * Math.PI / 180;
+            const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+            return { x, y };
+        }
+
+        function tileToLonLat(x, y, zoom) {
+            const n = Math.pow(2, zoom);
+            const lon = x / n * 360 - 180;
+            const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n)));
+            const lat = latRad * 180 / Math.PI;
+            return { lon, lat };
+        }
+
+        function createBasemapGround(type) {
+            // Remove existing ground
+            if (groundPlane) {
+                scene.remove(groundPlane);
+                groundPlane.traverse(child => {
+                    if (child.isMesh) {
+                        child.geometry.dispose();
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
+                    }
+                });
+                groundPlane = null;
+            }
+
+            if (type === 'plain') {
+                // Simple gray ground plane
+                const geo = new THREE.PlaneGeometry(6000, 6000);
+                const mat = new THREE.MeshLambertMaterial({ color: 0xd1d5db, side: THREE.DoubleSide });
+                groundPlane = new THREE.Mesh(geo, mat);
+                groundPlane.rotation.x = -Math.PI / 2;
+                groundPlane.position.y = -0.05;
+                groundPlane.receiveShadow = true;
+                scene.add(groundPlane);
+                return;
+            }
+
+            // Satellite basemap using ESRI World Imagery tiles
+            const zoom = 17;
+            const centerTile = lonLatToTile(centerCoords[0], centerCoords[1], zoom);
+            const tileRange = 10; // 17x17 grid of tiles
+            const group = new THREE.Group();
+
+            for (let dx = -tileRange; dx <= tileRange; dx++) {
+                for (let dy = -tileRange; dy <= tileRange; dy++) {
+                    const tx = centerTile.x + dx;
+                    const ty = centerTile.y + dy;
+
+                    // Tile corners in lon/lat
+                    const topLeft = tileToLonLat(tx, ty, zoom);
+                    const bottomRight = tileToLonLat(tx + 1, ty + 1, zoom);
+
+                    // Convert to scene coordinates
+                    const x1 = (topLeft.lon - centerCoords[0]) * sceneScale;
+                    const z1 = -(topLeft.lat - centerCoords[1]) * (sceneScale * latCorr);
+                    const x2 = (bottomRight.lon - centerCoords[0]) * sceneScale;
+                    const z2 = -(bottomRight.lat - centerCoords[1]) * (sceneScale * latCorr);
+
+                    const w = Math.abs(x2 - x1);
+                    const h = Math.abs(z2 - z1);
+                    const cx = (x1 + x2) / 2;
+                    const cz = (z1 + z2) / 2;
+
+                    const geo = new THREE.PlaneGeometry(w, h);
+                   
+                    // ESRI World Imagery tile URL
+                    const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${ty}/${tx}`;
+                   
+                    const loader = new THREE.TextureLoader();
+                    loader.crossOrigin = 'anonymous';
+                    const mat = new THREE.MeshLambertMaterial({
+                        color: 0xaaaaaa,
+                        side: THREE.DoubleSide
+                    });
+
+                    loader.load(url, (texture) => {
+                        texture.minFilter = THREE.LinearFilter;
+                        texture.magFilter = THREE.LinearFilter;
+                        mat.map = texture;
+                        mat.color.set(0xffffff);
+                        mat.needsUpdate = true;
+                    });
+
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.rotation.x = -Math.PI / 2;
+                    mesh.position.set(cx, -0.05, cz);
+                    mesh.receiveShadow = true;
+                    group.add(mesh);
+                }
+            }
+
+            groundPlane = group;
+            scene.add(groundPlane);
+        }
+
+        // Expose basemap switcher globally
+        window.setBasemap = function(type) {
+            createBasemapGround(type);
+            document.getElementById('btn-satellite').classList.toggle('active', type === 'satellite');
+            document.getElementById('btn-plain').classList.toggle('active', type === 'plain');
+        };
+        // ======= SLUT: Basemap-funktionalitet =======
+
+        init();
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xd1d5db);
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 20000);
+            camera.position.set(120, 80, -120);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.localClippingEnabled = true;
+            renderer.shadowMap.enabled = true;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+            scene.add(hemiLight);
+
+            sun = new THREE.DirectionalLight(0xffffff, 2);
+            sun.castShadow = true;
+            sun.shadow.mapSize.width = 2048;
+            sun.shadow.mapSize.height = 2048;
+            scene.add(sun);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.target.set(0, 0, 0);
+
+            // NYTT: Ladda satellitbaskarta som standard
+            createBasemapGround('satellite');
+
+            new GLTFLoader().load('ImageToStl.com_Urban+Project+IFC.glb', (gltf) => {
+                model = gltf.scene;
+                model.scale.set(1.8, 1.8, 1.8);
+                model.rotation.y = (Math.PI / 0.52) + Math.PI;
+                model.position.set(-20, 0, 35);
+                model.traverse(n => {
+                    if (n.isMesh) {
+                        n.material.clippingPlanes = localPlanes;
+                        n.material.side = THREE.DoubleSide;
+                        n.castShadow = n.receiveShadow = true;
+                    }
+                });
+                scene.add(model);
+                updateSun(12);
+                animate();
+            });
+
+            // Vägar med mörk asfaltyta
+            fetch('https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-BILV%C3%84GAR.geojson')
+                .then(res => res.json()).then(data => drawGeo(data, 0x333333, 'line'));
+
+            // Vita byggnader
+            fetch('https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-BYGGNADER%20(2).json')
+                .then(res => res.json()).then(data => drawGeo(data, 0xffffff, 'mesh'));
+
+            document.getElementById('clip-y').addEventListener('input', e => localPlanes[0].constant = parseFloat(e.target.value));
+            document.getElementById('clip-x').addEventListener('input', e => localPlanes[1].constant = parseFloat(e.target.value));
+
+            const simBtn = document.getElementById('btn-simulate');
+            const clockText = document.getElementById('clock-display');
+            simBtn.addEventListener('click', () => {
+                isSimulating = !isSimulating;
+                if(isSimulating) currentHour = 6;
+                simBtn.innerText = isSimulating ? "Stop Simulation" : "Start Simulation (06:00)";
+                simBtn.style.backgroundColor = isSimulating ? "#ef4444" : "#10b981";
+            });
+
+            setInterval(() => {
+                if (isSimulating) {
+                    currentHour = (currentHour + 0.1) % 24;
+                    const h = Math.floor(currentHour);
+                    const m = Math.floor((currentHour - h) * 60);
+                    clockText.innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                    updateSun(currentHour);
+                }
+            }, 50);
+        }
+
+        function updateSun(time) {
+            const sunAngle = ((time - 6) / 12) * Math.PI;
+            const radius = 500;
+            sun.position.set(Math.cos(sunAngle) * radius, Math.sin(sunAngle) * radius, -100);
+            const isDay = time >= 6 && time <= 18;
+            const dayStrength = isDay ? Math.sin(sunAngle) : 0;
+            sun.intensity = dayStrength * 2.5;
+            hemiLight.intensity = 0.5 + dayStrength * 1.2;
+            scene.background = new THREE.Color().setHSL(0.6, 0.2, 0.1 + dayStrength * 0.75);
+        }
+
+        function drawGeo(data, color, type) {
+            const features = data.features || (Array.isArray(data) ? data : []);
+            features.forEach(feature => {
+                const geom = feature.geometry;
+                if (!geom || !geom.coordinates) return;
+                const polygons = (geom.type.includes('Multi')) ? geom.coordinates : [geom.coordinates];
+                polygons.forEach(polygon => {
+                    const ring = (geom.type.includes('Line')) ? polygon : polygon[0];
+                    if (type === 'line') {
+                        const width = 8.5;
+                        const pts = ring.map(pt => new THREE.Vector2((pt[0] - centerCoords[0]) * sceneScale, -(pt[1] - centerCoords[1]) * (sceneScale * latCorr)));
+                        const vertices = [];
+                        for(let i = 0; i < pts.length - 1; i++) {
+                            const p1 = pts[i]; const p2 = pts[i+1];
+                            const dx = p2.x - p1.x; const dy = p2.y - p1.y;
+                            const len = Math.sqrt(dx*dx + dy*dy);
+                            const nx = -dy / len * 4.25; const ny = dx / len * 4.25;
+                            vertices.push(p1.x + nx, 0.08, p1.y + ny, p1.x - nx, 0.08, p1.y - ny, p2.x + nx, 0.08, p2.y + ny);
+                            vertices.push(p1.x - nx, 0.08, p1.y - ny, p2.x - nx, 0.08, p2.y - ny, p2.x + nx, 0.08, p2.y + ny);
+                        }
+                        const roadMesh = new THREE.Mesh(
+                            new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)),
+                            new THREE.MeshLambertMaterial({ color: color, side: THREE.DoubleSide })
+                        );
+                        roadMesh.receiveShadow = true;
+                        scene.add(roadMesh);
+                    } else {
+                        const dist = Math.sqrt(Math.pow(ring[0][0] - centerCoords[0], 2) + Math.pow(ring[0][1] - centerCoords[1], 2));
+                        if (dist < 0.0002) return;
+                        const shape = new THREE.Shape();
+                        ring.forEach((pt, i) => {
+                            const x = (pt[0] - centerCoords[0]) * sceneScale;
+                            const y = -(pt[1] - centerCoords[1]) * (sceneScale * latCorr);
+                            if(i === 0) shape.moveTo(x, y); else shape.lineTo(x, y);
+                        });
+                        const mesh = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 7, bevelEnabled: false }), new THREE.MeshLambertMaterial({ color: color }));
+                        mesh.rotation.x = Math.PI/2;
+                        mesh.position.y = 7;
+                        mesh.castShadow = mesh.receiveShadow = true;
+                        scene.add(mesh);
+                    }
+                });
+            });
+        }
+
+        function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+    </script>
+</body>
+</html>

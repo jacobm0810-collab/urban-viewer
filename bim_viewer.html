@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="utf-8">
+    <title>BIM Viewer - Hus-med-rum (Full vy fix)</title>
+    <style>
+        body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #ffffff; font-family: sans-serif; }
+        #container { width: 100%; height: 100%; }
+        .ui-overlay { position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.95); padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10; border-left: 5px solid #ef4444; width: 260px; }
+        .section-tools { margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; }
+        .tool-label { font-size: 0.8rem; font-weight: bold; display: block; margin-bottom: 5px; color: #1e293b; }
+        input[type="range"] { width: 100%; margin-bottom: 15px; cursor: pointer; accent-color: #ef4444; }
+        .back-link { display: inline-block; margin-top: 10px; color: #ef4444; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="ui-overlay">
+        <h2 style="margin:0; font-size:1.1rem; color:#1e293b;">BIM Sektionsvy</h2>
+        <div class="section-tools">
+            <span class="tool-label">Horisontell sektion (Höjd)</span>
+            <input type="range" id="clip-y" min="-100" max="100" step="1" value="100">
+            <span class="tool-label">Vertikal sektion (Sida)</span>
+            <input type="range" id="clip-x" min="-100" max="100" step="1" value="100">
+        </div>
+        <a href="index.html" class="back-link">← Tillbaka till kartan</a>
+    </div>
+    <div id="container"></div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls, model;
+        
+        // Vi sätter startvärdet till 100 för att vara helt säkra på att vara utanför modellen
+        const localPlanes = [
+            new THREE.Plane(new THREE.Vector3(0, -1, 0), 100),
+            new THREE.Plane(new THREE.Vector3(-1, 0, 0), 100)
+        ];
+
+        init();
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xe2e8f0);
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+            camera.position.set(30, 30, 30);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.localClippingEnabled = true;
+            document.getElementById('container').appendChild(renderer.domElement);
+            
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 3));
+            const sun = new THREE.DirectionalLight(0xffffff, 2);
+            sun.position.set(10, 20, 10);
+            scene.add(sun);
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            
+            const loader = new GLTFLoader();
+            loader.load('Hus-med-rum.glb', function(gltf) {
+                model = gltf.scene;
+
+                // Automatisk centrering av modellen
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center); // Flyttar modellen till 0,0,0
+
+                model.traverse(node => {
+                    if (node.isMesh) {
+                        node.material.clippingPlanes = localPlanes;
+                        node.material.side = THREE.DoubleSide;
+                        node.material.clipShadows = true;
+                    }
+                });
+                scene.add(model);
+                animate();
+            });
+
+            document.getElementById('clip-y').addEventListener('input', e => {
+                localPlanes[0].constant = parseFloat(e.target.value);
+            });
+            document.getElementById('clip-x').addEventListener('input', e => {
+                localPlanes[1].constant = parseFloat(e.target.value);
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); }
+    </script>
+</body>
+</html>
