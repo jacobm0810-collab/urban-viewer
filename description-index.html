@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Description - Urban Management</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #1e293b; background: #f8fafc; margin: 0; padding: 0; }
+        header { background: #ffffff; padding: 40px 20px; text-align: center; border-bottom: 2px solid #e2e8f0; }
+        h1 { margin: 0; color: #000; text-transform: uppercase; letter-spacing: 2px; }
+        .container { max-width: 900px; margin: 40px auto; background: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h2 { color: #0f172a; border-left: 5px solid #ef4444; padding-left: 15px; margin-top: 30px; }
+        p { margin-bottom: 20px; font-size: 1.1rem; }
+        .back-btn { display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 700; margin-top: 20px; text-transform: uppercase; transition: background 0.3s; }
+        .back-btn:hover { background: #334155; }
+        ul { margin-bottom: 20px; }
+        li { margin-bottom: 10px; }
+        .note-box { background: #fff1f2; border: 1px solid #fecdd3; padding: 20px; border-radius: 8px; margin-top: 40px; }
+        .note-box h3 { margin-top: 0; color: #be123c; font-size: 1rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Project Methodology & Storytelling</h1>
+    <p>Understanding the Jönköping Urban Management Dashboard</p>
+</header>
+
+<div class="container">
+    <a href="index.html" class="back-btn">← Back to Dashboard</a>
+
+    <h2>AI-Powered Development with Gemini</h2>
+    <p>This dashboard was built through an iterative process in collaboration with <strong>Gemini</strong>. The AI assisted in bridging the gap between raw GIS data and a functional web interface by providing:</p>
+    <ul>
+        <li><strong>Code Architecture:</strong> Structuring the ArcGIS Maps SDK for JavaScript and optimizing the UI for a professional dashboard feel.</li>
+        <li><strong>Logic Synthesis:</strong> Developing Arcade expressions for real-time building IDs and dynamic height extrusions based on geographic center points.</li>
+        <li><strong>Problem Solving:</strong> Debugging complex rendering issues and ensuring persistence across different basemap changes.</li>
+    </ul>
+
+    <h2>3D Building Heights</h2>
+    <p>Building heights are generated dynamically using an <strong>Arcade Expression</strong>. The logic uses the surface area of each polygon to estimate a realistic height. Smaller buildings are assigned residential-scale heights, while larger footprints are extruded further to simulate commercial or industrial complexes. A coordinate-based <code>seed</code> adds randomness to create a realistic urban skyline.</p>
+
+    <h2>Analysis Tools</h2>
+    <p>The dashboard features several critical urban analysis layers:</p>
+    <ul>
+        <li><strong>Emergency Routing (Fire & Police):</strong> Visualizes optimized response paths from local stations to areas like Öxnehaga, including travel-time calculations.</li>
+        <li><strong>Hospital Access:</strong> Shows the most efficient route to Ryhov County Hospital for healthcare accessibility insights.</li>
+        <li><strong>Service Areas (Walking Analysis):</strong> Uses a 0-15 minute buffer analysis to identify "walkability deserts" categorized by time intervals.</li>
+    </ul>
+
+    <h2>Dynamic Map Layers</h2>
+    <p>All Point of Interest (POI) data is pulled from custom GeoJSON datasets. Each category uses custom SVG icons, with visibility toggled dynamically via the sidebar interface.</p>
+
+    <div class="note-box">
+        <h3>Lessons for Future Projects</h3>
+        <p>Throughout the project, we discovered that <strong>Gemini</strong> was not always optimal for specific coding tasks and technical troubleshooting. We also tested alternative tools like <strong>Lovable</strong> and <strong>Codex</strong>, which showed great potential. However, usage of these tools was limited because they only offer a certain number of free tokens per day, meaning we could not utilize their full capacity for this project.</p>
+    </div>
+
+    <div style="text-align: center; margin-top: 50px;">
+        <hr style="border: 0; border-top: 1px solid #e2e8f0;">
+        <p style="color: #64748b; font-size: 0.9rem;">Built with ArcGIS Maps SDK | OpenStreetMap Data | AI Collaboration.</p>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BIM Description - Urban Management</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #1e293b; background: #f8fafc; margin: 0; padding: 0; }
+        header { background: #ffffff; padding: 40px 20px; text-align: center; border-bottom: 2px solid #e2e8f0; }
+        h1 { margin: 0; color: #000; text-transform: uppercase; letter-spacing: 2px; }
+        .container { max-width: 900px; margin: 40px auto; background: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h2 { color: #0f172a; border-left: 5px solid #ef4444; padding-left: 15px; margin-top: 30px; }
+        p { margin-bottom: 20px; font-size: 1.1rem; }
+        .back-btn { display: inline-block; background: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 700; margin-top: 20px; text-transform: uppercase; transition: background 0.3s; }
+        .back-btn:hover { background: #334155; }
+        ul { margin-bottom: 20px; }
+        li { margin-bottom: 10px; }
+        .note-box { background: #fff1f2; border: 1px solid #fecdd3; padding: 20px; border-radius: 8px; margin-top: 40px; }
+        .note-box h3 { margin-top: 0; color: #be123c; font-size: 1rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>BIM Methodology & Storytelling</h1>
+    <p>Technical Insights into the 3D Model Environment</p>
+</header>
+
+<div class="container">
+    <a href="bim_viewer2.html" class="back-btn">← Back to BIM Viewer</a>
+
+    <h2>Sectioning Tool (Slicing)</h2>
+    <p>To enable exploration of the building's interior, we implemented high-performance <strong>Clipping Planes</strong>. This tool allows users to cut through the model in real-time along both horizontal (Y) and vertical (X) axes. By using local clipping in the Three.js renderer, we can reveal floor plans, structural CLT-elements, and internal layouts without losing the overall spatial context of the model.</p>
+
+    <h2>Daylight Simulations</h2>
+    <p>The <strong>Daylight Simulation</strong> engine calculates the sun's position based on a mathematical model of planetary motion. Users can simulate an entire day cycle (from 06:00 to 18:00). The simulation affects the global lighting, shadow casting, and sky color, providing critical visual data on how natural light interacts with the building's facade and surrounding landscape at different hours.</p>
+
+    <h2>Building Information & Geometry</h2>
+    <p>The model is rendered as a high-fidelity <strong>GLTF/GLB asset</strong>, ensuring a smooth web experience while maintaining architectural detail. Instead of static images, the viewer provides a 360-degree interactive environment where technical data—such as energy performance (U-values) and structural systems—is presented in a dedicated side-panel, giving a clear overview of the building's "As-Built" specifications.</p>
+
+    <h2>Basemap & Geolocation</h2>
+    <p>Context is key in urban management. The BIM viewer utilizes an <strong>ArcGIS Satellite Basemap</strong> that is dynamically tiled around the building's coordinates. By combining high-resolution satellite imagery with GeoJSON-based road and building data from Jönköping Municipality, we bridge the gap between a standalone architectural model and its real-world urban environment.</p>
+
+    <div class="note-box">
+        <h3>Lessons for Future Projects</h3>
+        <p>Throughout the project, we discovered that <strong>Gemini</strong> was not always optimal for specific coding tasks and technical troubleshooting. We also tested alternative tools like <strong>Lovable</strong> and <strong>Codex</strong>, which showed great potential. However, usage of these tools was limited because they only offer a certain number of free tokens per day, meaning we could not utilize their full capacity for this project.</p>
+    </div>
+
+    <div style="text-align: center; margin-top: 50px;">
+        <hr style="border: 0; border-top: 1px solid #e2e8f0;">
+        <p style="color: #64748b; font-size: 0.9rem;">Built with Three.js | ArcGIS Tiles | Digital Twin Technology.</p>
+    </div>
+</div>
+
+</body>
+</html>
