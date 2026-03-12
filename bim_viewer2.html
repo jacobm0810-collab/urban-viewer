@@ -6,7 +6,7 @@
     <style>
         body { margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; background: #cbd5e1; font-family: 'Segoe UI', sans-serif; }
         #container { width: 100%; height: 100%; }
-       
+        
         .ui-overlay {
             position: absolute; top: 20px; left: 20px;
             background: rgba(255,255,255,0.95); padding: 20px;
@@ -53,6 +53,14 @@
             border-radius: 6px; cursor: pointer; background: #fff; font-weight: 600;
         }
         .btn-basemap-3d.active { background: #000; color: white; border-color: #000; }
+
+        .story-btn { 
+            width: 100%; background-color: #000000; color: white; border: none; 
+            padding: 12px; border-radius: 4px; font-weight: 800; cursor: pointer; 
+            display: block; text-align: center; text-decoration: none; 
+            text-transform: uppercase; margin-top: 20px; font-size: 0.8rem;
+        }
+        .story-btn:hover { background-color: #334155; }
     </style>
 </head>
 <body>
@@ -61,9 +69,9 @@
         <h2>BIM Section View</h2>
         <div class="section-tools">
             <span class="tool-label">Horizontal Section (Y)</span>
-            <input type="range" id="clip-y" min="0" max="25" step="0.1" value="25">
+            <input type="range" id="clip-y" min="0" max="28" step="0.1" value="28">
             <span class="tool-label">Vertical Section (X)</span>
-            <input type="range" id="clip-x" min="-40" max="25" step="0.1" value="25">
+            <input type="range" id="clip-x" min="-85" max="40" step="0.1" value="40">
         </div>
 
         <div class="section-tools" style="border-top: 2px solid #10b981;">
@@ -72,7 +80,6 @@
             <button id="btn-simulate" class="sim-btn">Start Simulation (06:00)</button>
         </div>
 
-        <!-- NYTT: Basemap-kontroll -->
         <div class="basemap-section">
             <span class="tool-label" style="color: #0ea5e9;">🗺️ Basemap</span>
             <div style="display: flex; justify-content: space-between; margin-top: 8px;">
@@ -81,6 +88,7 @@
             </div>
         </div>
 
+        <a href="description-bim.html" class="story-btn">Description/Storytelling</a>
         <a href="index.html" class="back-link">← Back to Map</a>
     </div>
 
@@ -95,7 +103,7 @@
         <h3>Energy Performance</h3>
         <div class="info-row"><span class="info-label">U-value External Wall</span><span class="info-value">0.13 W/m²K</span></div>
         <div class="info-row"><span class="info-label">U-value Windows</span><span class="info-value">0.85 W/m²K</span></div>
-        <div class="info-row"><span class="info-label">Energy Class</span><span class="info-value">Gold</span></div>
+        <div class="info-row"><span class="info-label">Energy Class</span><span class="info-value">Miljöbyggnad Gold</span></div>
 
         <h3>Technical Data</h3>
         <div class="info-row"><span class="info-label">Structural System</span><span class="info-value">CLT / Concrete</span></div>
@@ -120,19 +128,23 @@
         let isSimulating = false;
         let currentHour = 12;
         let groundPlane = null;
-
-        const normalX = new THREE.Vector3(-1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), (Math.PI / 0.52));
-        const localPlanes = [new THREE.Plane(new THREE.Vector3(0, -1, 0), 25), new THREE.Plane(normalX, 25)];
-
-        window.openStreetView = function() {
-            window.open("https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=57.769294,14.260907", "_blank");
-        };
+        const terrainTileCache = new Map();
 
         const centerCoords = [14.260907, 57.769294];
         const sceneScale = 220000;
         const latCorr = 1.885;
 
-        // ======= NYTT: Basemap-funktionalitet =======
+        const normalX = new THREE.Vector3(-1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), (Math.PI / 0.52));
+        
+        const localPlanes = [
+            new THREE.Plane(new THREE.Vector3(0, -1, 0), 28),
+            new THREE.Plane(normalX, 40)
+        ];
+
+        window.openStreetView = function() {
+            window.open("https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=57.769294,14.260907", "_blank");
+        };
+
         function lonLatToTile(lon, lat, zoom) {
             const n = Math.pow(2, zoom);
             const x = Math.floor((lon + 180) / 360 * n);
@@ -150,47 +162,34 @@
         }
 
         function createBasemapGround(type) {
-            // Remove existing ground
             if (groundPlane) {
                 scene.remove(groundPlane);
-                groundPlane.traverse(child => {
-                    if (child.isMesh) {
-                        child.geometry.dispose();
-                        if (child.material.map) child.material.map.dispose();
-                        child.material.dispose();
-                    }
-                });
                 groundPlane = null;
             }
 
             if (type === 'plain') {
-                // Simple gray ground plane
-                const geo = new THREE.PlaneGeometry(6000, 6000);
+                const geo = new THREE.PlaneGeometry(8000, 8000);
                 const mat = new THREE.MeshLambertMaterial({ color: 0xd1d5db, side: THREE.DoubleSide });
                 groundPlane = new THREE.Mesh(geo, mat);
                 groundPlane.rotation.x = -Math.PI / 2;
-                groundPlane.position.y = -0.05;
+                groundPlane.position.y = -5; // Lätt sänkt för att undvika flimmer
                 groundPlane.receiveShadow = true;
                 scene.add(groundPlane);
                 return;
             }
 
-            // Satellite basemap using ESRI World Imagery tiles
             const zoom = 17;
             const centerTile = lonLatToTile(centerCoords[0], centerCoords[1], zoom);
-            const tileRange = 10; // 17x17 grid of tiles
+            const tileRange = 4;
             const group = new THREE.Group();
 
             for (let dx = -tileRange; dx <= tileRange; dx++) {
                 for (let dy = -tileRange; dy <= tileRange; dy++) {
                     const tx = centerTile.x + dx;
                     const ty = centerTile.y + dy;
-
-                    // Tile corners in lon/lat
                     const topLeft = tileToLonLat(tx, ty, zoom);
                     const bottomRight = tileToLonLat(tx + 1, ty + 1, zoom);
 
-                    // Convert to scene coordinates
                     const x1 = (topLeft.lon - centerCoords[0]) * sceneScale;
                     const z1 = -(topLeft.lat - centerCoords[1]) * (sceneScale * latCorr);
                     const x2 = (bottomRight.lon - centerCoords[0]) * sceneScale;
@@ -201,53 +200,122 @@
                     const cx = (x1 + x2) / 2;
                     const cz = (z1 + z2) / 2;
 
-                    const geo = new THREE.PlaneGeometry(w, h);
-                   
-                    // ESRI World Imagery tile URL
+                    // Högupplöst mesh för terrängformning
+                    const geo = new THREE.PlaneGeometry(w, h, 64, 64);
                     const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoom}/${ty}/${tx}`;
-                   
+                    
                     const loader = new THREE.TextureLoader();
                     loader.crossOrigin = 'anonymous';
-                    const mat = new THREE.MeshLambertMaterial({
-                        color: 0xaaaaaa,
-                        side: THREE.DoubleSide
+                    
+                    const mat = new THREE.MeshStandardMaterial({ 
+                        color: 0xffffff, 
+                        side: THREE.DoubleSide,
+                        roughness: 1
                     });
 
                     loader.load(url, (texture) => {
-                        texture.minFilter = THREE.LinearFilter;
-                        texture.magFilter = THREE.LinearFilter;
                         mat.map = texture;
-                        mat.color.set(0xffffff);
                         mat.needsUpdate = true;
                     });
 
                     const mesh = new THREE.Mesh(geo, mat);
                     mesh.rotation.x = -Math.PI / 2;
-                    mesh.position.set(cx, -0.05, cz);
+                    mesh.position.set(cx, 0, cz);
                     mesh.receiveShadow = true;
+
+                    applyTerrain(mesh, tx, ty, zoom);
                     group.add(mesh);
                 }
             }
-
             groundPlane = group;
             scene.add(groundPlane);
         }
 
-        // Expose basemap switcher globally
+        async function getTerrainTileImageData(demZoom, demX, demY) {
+            const key = `${demZoom}/${demX}/${demY}`;
+            if (terrainTileCache.has(key)) return terrainTileCache.get(key);
+
+            const promise = new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.src = `https://demotiles.maplibre.org/terrain-tiles/${demZoom}/${demX}/${demY}.png`;
+
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 256;
+                        canvas.height = 256;
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.drawImage(img, 0, 0);
+                        resolve(ctx.getImageData(0, 0, 256, 256).data);
+                    } catch (e) {
+                        console.warn('Kunde inte läsa terrain-pixlar (CORS/canvas):', e);
+                        resolve(null);
+                    }
+                };
+
+                img.onerror = () => {
+                    console.warn(`Kunde inte ladda terrain tile: ${img.src}`);
+                    resolve(null);
+                };
+            });
+
+            terrainTileCache.set(key, promise);
+            return promise;
+        }
+
+        async function applyTerrain(mesh, tx, ty, zoom) {
+            // ArcGIS SceneView använder world-elevation. Här använder vi Terrain-RGB (DEM)
+            // och dekodar höjd i meter för att få riktig terräng i Three.js.
+            const demZoom = Math.min(zoom, 12);
+            const factor = Math.pow(2, zoom - demZoom);
+            const demX = Math.floor(tx / factor);
+            const demY = Math.floor(ty / factor);
+            const subX = tx % factor;
+            const subY = ty % factor;
+
+            const pixels = await getTerrainTileImageData(demZoom, demX, demY);
+            if (!pixels) return;
+
+            const pos = mesh.geometry.attributes.position;
+            const elevationScale = 6.5;
+            const refHeight = 120;
+
+            for (let i = 0; i < pos.count; i++) {
+                const u = (pos.getX(i) / mesh.geometry.parameters.width + 0.5);
+                const v = (pos.getY(i) / mesh.geometry.parameters.height + 0.5);
+
+                // Mappa från detaljtile till rätt del av DEM-tile
+                const demU = (subX + u) / factor;
+                const demV = (subY + (1 - v)) / factor;
+
+                const px = Math.min(255, Math.max(0, Math.floor(demU * 255)));
+                const py = Math.min(255, Math.max(0, Math.floor(demV * 255)));
+                const idx = (py * 256 + px) * 4;
+
+                // Terrain-RGB (Mapbox/MapLibre): elevation(m) = -10000 + (R*256*256 + G*256 + B) * 0.1
+                const rawH = -10000 + ((pixels[idx] * 65536 + pixels[idx + 1] * 256 + pixels[idx + 2]) * 0.1);
+                pos.setZ(i, (rawH - refHeight) * elevationScale);
+            }
+
+            pos.needsUpdate = true;
+            mesh.geometry.computeVertexNormals();
+        }
+
         window.setBasemap = function(type) {
             createBasemapGround(type);
             document.getElementById('btn-satellite').classList.toggle('active', type === 'satellite');
             document.getElementById('btn-plain').classList.toggle('active', type === 'plain');
         };
-        // ======= SLUT: Basemap-funktionalitet =======
 
         init();
 
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xd1d5db);
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 20000);
-            camera.position.set(120, 80, -120);
+            
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 30000);
+            camera.position.set(180, 150, -180);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -260,22 +328,22 @@
 
             sun = new THREE.DirectionalLight(0xffffff, 2);
             sun.castShadow = true;
-            sun.shadow.mapSize.width = 2048;
-            sun.shadow.mapSize.height = 2048;
+            sun.shadow.mapSize.width = 4096;
+            sun.shadow.mapSize.height = 4096;
             scene.add(sun);
 
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.target.set(0, 0, 0);
 
-            // NYTT: Ladda satellitbaskarta som standard
             createBasemapGround('satellite');
 
             new GLTFLoader().load('ImageToStl.com_Urban+Project+IFC.glb', (gltf) => {
                 model = gltf.scene;
-                model.scale.set(1.8, 1.8, 1.8);
+                model.scale.set(3.5, 3.5, 3.5);
                 model.rotation.y = (Math.PI / 0.52) + Math.PI;
                 model.position.set(-20, 0, 35);
+                
                 model.traverse(n => {
                     if (n.isMesh) {
                         n.material.clippingPlanes = localPlanes;
@@ -288,11 +356,9 @@
                 animate();
             });
 
-            // Vägar med mörk asfaltyta
             fetch('https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-BILV%C3%84GAR.geojson')
                 .then(res => res.json()).then(data => drawGeo(data, 0x333333, 'line'));
 
-            // Vita byggnader
             fetch('https://raw.githubusercontent.com/jacobm0810-collab/urban-viewer/main/Polygons_FeaturesToJSON-BYGGNADER%20(2).json')
                 .then(res => res.json()).then(data => drawGeo(data, 0xffffff, 'mesh'));
 
@@ -321,7 +387,7 @@
 
         function updateSun(time) {
             const sunAngle = ((time - 6) / 12) * Math.PI;
-            const radius = 500;
+            const radius = 1000;
             sun.position.set(Math.cos(sunAngle) * radius, Math.sin(sunAngle) * radius, -100);
             const isDay = time >= 6 && time <= 18;
             const dayStrength = isDay ? Math.sin(sunAngle) : 0;
@@ -339,7 +405,6 @@
                 polygons.forEach(polygon => {
                     const ring = (geom.type.includes('Line')) ? polygon : polygon[0];
                     if (type === 'line') {
-                        const width = 8.5;
                         const pts = ring.map(pt => new THREE.Vector2((pt[0] - centerCoords[0]) * sceneScale, -(pt[1] - centerCoords[1]) * (sceneScale * latCorr)));
                         const vertices = [];
                         for(let i = 0; i < pts.length - 1; i++) {
@@ -347,8 +412,8 @@
                             const dx = p2.x - p1.x; const dy = p2.y - p1.y;
                             const len = Math.sqrt(dx*dx + dy*dy);
                             const nx = -dy / len * 4.25; const ny = dx / len * 4.25;
-                            vertices.push(p1.x + nx, 0.08, p1.y + ny, p1.x - nx, 0.08, p1.y - ny, p2.x + nx, 0.08, p2.y + ny);
-                            vertices.push(p1.x - nx, 0.08, p1.y - ny, p2.x - nx, 0.08, p2.y - ny, p2.x + nx, 0.08, p2.y + ny);
+                            vertices.push(p1.x + nx, 0.1, p1.y + ny, p1.x - nx, 0.1, p1.y - ny, p2.x + nx, 0.1, p2.y + ny);
+                            vertices.push(p1.x - nx, 0.1, p1.y - ny, p2.x - nx, 0.1, p2.y - ny, p2.x + nx, 0.1, p2.y + ny);
                         }
                         const roadMesh = new THREE.Mesh(
                             new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3)),
