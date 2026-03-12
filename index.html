@@ -27,7 +27,8 @@
     .legend-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
     .legend-icon { width: 26px; height: 26px; }
     .legend-box { width: 20px; height: 20px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); }
-    .bim-btn { width: 100%; background-color: #ef4444 !important; color: black !important; border: none; padding: 12px; border-radius: 4px; font-weight: 800; cursor: pointer; display: block; text-align: center; text-decoration: none; text-transform: uppercase; margin-top: 10px; }
+    .bim-btn { width: 100%; background-color: #ef4444 !important; color: white !important; border: none; padding: 12px; border-radius: 4px; font-weight: 800; cursor: pointer; display: block; text-align: center; text-decoration: none; text-transform: uppercase; margin-top: 10px; }
+    .story-btn { width: 100%; background-color: #000000 !important; color: white !important; border: none; padding: 12px; border-radius: 4px; font-weight: 800; cursor: pointer; display: block; text-align: center; text-decoration: none; text-transform: uppercase; margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -50,6 +51,13 @@
         <button id="btn-gray" class="btn-basemap">Light Gray</button>
       </div>
     </section>
+    
+    <section>
+      <h3>BIM & Storytelling</h3>
+      <a href="bim_viewer2.html" class="bim-btn">Open BIM-viewer</a>
+      <a href="description-index.html" class="story-btn">Description/Storytelling</a>
+    </section>
+
     <section>
       <h3>Analysis Tools</h3>
       <div class="control-item"><span>Fire Analysis Öxnehaga</span><label class="switch"><input type="checkbox" id="layerFire"><span class="slider"></span></label></div>
@@ -138,33 +146,26 @@ function(Map, SceneView, GeoJSONLayer, GraphicsLayer, Graphic, locator) {
             const lon = f.graphic.geometry.extent.center.longitude;
             const pid = "UIM-" + Math.abs(Math.round(lat * 10000)) + Math.abs(Math.round(lon * 10000));
             let res = `Type: <b>Building</b><br>ID: #${pid}`;
-           
-            if (pid === "UIM-577746142544") {
-                res += `<div class="bim-btn bim-btn-click1" style="color: black !important; font-weight: 800;">OPEN 3D MODEL</div>`;
-            }
-            if (pid === "UIM-577692142609") {
-                res += `<div class="bim-btn bim-btn-click2" style="color: black !important; font-weight: 800;">OPEN 3D MODEL</div>`;
-            }
+            if (pid === "UIM-577746142544") res += `<div class="bim-btn bim-btn-click1" style="color: white !important; font-weight: 800;">OPEN 3D MODEL</div>`;
+            if (pid === "UIM-577692142609") res += `<div class="bim-btn bim-btn-click2" style="color: white !important; font-weight: 800;">OPEN 3D MODEL</div>`;
             return res;
         }
       },
-      // Restored simple 12m height extrusion to ensure buildings are not flat
-            renderer: {
+      renderer: {
         type: "simple",
-        symbol: {
-          type: "polygon-3d",
-          symbolLayers: [{
-            type: "extrude",
-            size: 10,
-            material: { color: [255, 255, 255, 0.9] }
-          }]
-        },
-        visualVariables: [{
-          type: "size",
-          axis: "height",
-          valueExpression: "var cx = Extent($feature).xmin; var cy = Extent($feature).ymin; var area = Area($feature, 'square-meters'); var seed = (cx * 1000 + cy * 1000) % 97; When(area > 2000, 25 + seed % 30, area > 800, 15 + seed % 20, area > 300, 8 + seed % 15, 5 + seed % 8);",
-          valueExpressionTitle: "Building Height"
-        }]
+        symbol: { type: "polygon-3d", symbolLayers: [{ type: "extrude", material: { color: [255, 255, 255, 0.9] } }] },
+        visualVariables: [
+          {
+            type: "color",
+            valueExpression: "var lat = Geometry($feature).extent.center.latitude; var lon = Geometry($feature).extent.center.longitude; var id = 'UIM-' + Abs(Round(lat * 10000)) + Abs(Round(lon * 10000)); return When(id == 'UIM-577692142609', 1, 0);",
+            stops: [{ value: 0, color: [255, 255, 255, 0.9] }, { value: 1, color: [239, 68, 68, 1] }]
+          },
+          {
+            type: "size",
+            axis: "height",
+            valueExpression: "var cx = Extent($feature).xmin; var cy = Extent($feature).ymin; var area = Area($feature, 'square-meters'); var seed = (cx * 1000 + cy * 1000) % 97; When(area > 2000, 25 + seed % 30, area > 800, 15 + seed % 20, area > 300, 8 + seed % 15, 5 + seed % 8);",
+          }
+        ]
       }
     });
 
@@ -187,14 +188,9 @@ function(Map, SceneView, GeoJSONLayer, GraphicsLayer, Graphic, locator) {
 
     const view = new SceneView({ container: "viewDiv", map: map, camera: { position: [14.260427, 57.755347, 3000], tilt: 35, heading: 0 } });
 
-    // Event listener for building pop-up buttons
     document.addEventListener("click", function(e) {
-      if (e.target && e.target.classList.contains("bim-btn-click1")) {
-        window.location.href = "bim_viewer.html";
-      }
-      if (e.target && e.target.classList.contains("bim-btn-click2")) {
-        window.location.href = "bim_viewer2.html";
-      }
+      if (e.target && e.target.classList.contains("bim-btn-click1")) window.location.href = "bim_viewer.html";
+      if (e.target && e.target.classList.contains("bim-btn-click2")) window.location.href = "bim_viewer2.html";
     });
 
     document.getElementById("layerFire").onchange = (e) => { fireRouteLayer.visible = firePOI.visible = e.target.checked; renderLegend(); };
